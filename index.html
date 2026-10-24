@@ -27,7 +27,7 @@
           <p class="text-xs text-slate-400 mt-0.5">E-E Spaced Repetition System</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 md:gap-3">
         <button id="tab-study-btn" onclick="switchTab('study')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 text-white transition">Study</button>
         <button id="tab-stats-btn" onclick="switchTab('stats')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 transition">Dashboard</button>
         <button id="tab-library-btn" onclick="switchTab('library')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 transition">Library</button>
@@ -43,7 +43,7 @@
 
     <!-- STUDY TAB -->
     <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-      <!-- Daily Progress & Streak -->
+      <!-- Daily Progress -->
       <div class="w-full mb-6 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
         <div class="flex justify-between items-center mb-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
@@ -68,13 +68,13 @@
             </div>
             <div class="text-center my-auto">
               <h2 id="card-chunk" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">--</h2>
-              <p class="text-xs text-slate-500 mt-4">(Click anywhere or press Spacebar to flip)</p>
+              <p class="text-xs text-slate-500 mt-4">(Tap card to flip)</p>
             </div>
             <div class="text-center text-xs text-slate-400">FRONT</div>
           </div>
 
           <!-- Back Face -->
-          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-6 bg-slate-850 border border-indigo-500/30 rounded-2xl bg-slate-800">
+          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-6 bg-slate-800 border border-indigo-500/30 rounded-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
               <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Simple English Meaning</span>
               <button onclick="event.stopPropagation(); speakText(currentCard.meaning + '. ' + currentCard.example)" class="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <!-- SRS Response Buttons (Visible when Card is Flipped) -->
+      <!-- SRS Response Buttons -->
       <div id="srs-controls" class="w-full grid grid-cols-3 gap-3 opacity-50 pointer-events-none transition-all duration-300">
         <button onclick="processSRS('hard')" class="flex flex-col items-center py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 rounded-xl transition">
           <span class="font-bold text-sm">Hard</span>
@@ -171,11 +171,12 @@
 
   </main>
 
-  <!-- Add Chunk Modal -->
+  <!-- Add / Edit Chunk Modal -->
   <div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
-      <h3 class="text-lg font-bold text-white">Add New Chunk</h3>
-      <form onsubmit="handleAddChunk(event)" class="space-y-3">
+      <h3 id="modal-title" class="text-lg font-bold text-white">Add New Chunk</h3>
+      <form onsubmit="handleSaveChunk(event)" class="space-y-3">
+        <input type="hidden" id="input-id">
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">CHUNK / EXPRESSION</label>
           <input type="text" id="input-chunk" required placeholder="e.g., be subject to" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
@@ -197,18 +198,38 @@
   </div>
 
   <script>
-    // Initial TOEIC Workplace Starter Chunks Dataset (Pure E-E)
+    // Expanded 30+ TOEIC High-Frequency Workplace Chunks Dataset (Pure E-E)
     const starterChunks = [
-      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example: 'Flight schedules are subject to change due to poor weather.', status: 'struggling', interval: 1, nextReview: Date.now() },
-      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example: 'All staff must comply with safety regulations in the lab.', status: 'learning', interval: 3, nextReview: Date.now() },
-      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example: 'You can always turn to the IT department for tech support.', status: 'struggling', interval: 1, nextReview: Date.now() },
-      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example: 'The team is currently working on a new marketing campaign.', status: 'learning', interval: 3, nextReview: Date.now() },
-      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example: 'The incorporation of AI tools significantly increased output.', status: 'mastered', interval: 15, nextReview: Date.now() + 864000000 },
-      { id: '6', chunk: 'be eligible for', meaning: 'qualified to receive or do something', example: 'Full-time employees are eligible for health insurance benefits.', status: 'learning', interval: 4, nextReview: Date.now() },
-      { id: '7', chunk: 'in response to', meaning: 'as a reaction or reply to', example: 'We updated our policy in response to customer feedback.', status: 'mastered', interval: 20, nextReview: Date.now() + 864000000 },
-      { id: '8', chunk: 'take effect', meaning: 'start applying or functioning officially', example: 'The new tax policy will take effect starting next month.', status: 'learning', interval: 2, nextReview: Date.now() },
-      { id: '9', chunk: 'be in charge of', meaning: 'be responsible for managing something', example: 'Sarah is in charge of organizing the annual conference.', status: 'mastered', interval: 14, nextReview: Date.now() + 864000000 },
-      { id: '10', chunk: 'look forward to', meaning: 'wait for something with excitement', example: 'We look forward to collaborating with your company.', status: 'mastered', interval: 30, nextReview: Date.now() + 864000000 }
+      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example: 'Flight schedules are subject to change due to poor weather.', status: 'struggling', interval: 1 },
+      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example: 'All staff must comply with safety regulations in the lab.', status: 'learning', interval: 3 },
+      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example: 'You can always turn to the IT department for tech support.', status: 'struggling', interval: 1 },
+      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example: 'The team is currently working on a new marketing campaign.', status: 'learning', interval: 3 },
+      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example: 'The incorporation of AI tools significantly increased output.', status: 'mastered', interval: 15 },
+      { id: '6', chunk: 'be eligible for', meaning: 'qualified to receive or do something', example: 'Full-time employees are eligible for health insurance benefits.', status: 'learning', interval: 4 },
+      { id: '7', chunk: 'in response to', meaning: 'as a reaction or reply to', example: 'We updated our policy in response to customer feedback.', status: 'mastered', interval: 20 },
+      { id: '8', chunk: 'take effect', meaning: 'start applying or functioning officially', example: 'The new tax policy will take effect starting next month.', status: 'learning', interval: 2 },
+      { id: '9', chunk: 'be in charge of', meaning: 'be responsible for managing something', example: 'Sarah is in charge of organizing the annual conference.', status: 'mastered', interval: 14 },
+      { id: '10', chunk: 'look forward to', meaning: 'wait for something with excitement', example: 'We look forward to collaborating with your company.', status: 'mastered', interval: 30 },
+      { id: '11', chunk: 'in advance of', meaning: 'prior to / before an event', example: 'Please register in advance of the workshop deadline.', status: 'struggling', interval: 1 },
+      { id: '12', chunk: 'be subject to approval', meaning: 'needs permission before being finalized', example: 'The proposed budget is subject to approval by the board.', status: 'learning', interval: 3 },
+      { id: '13', chunk: 'take place', meaning: 'happen or occur at a specific time/location', example: 'The quarterly meeting will take place in Conference Room B.', status: 'mastered', interval: 18 },
+      { id: '14', chunk: 'file a complaint', meaning: 'officially submit a statement about a problem', example: 'The customer decided to file a complaint regarding the delay.', status: 'learning', interval: 2 },
+      { id: '15', chunk: 'carry out', meaning: 'execute, perform, or conduct a task', example: 'Our team will carry out a thorough inspection tomorrow.', status: 'struggling', interval: 1 },
+      { id: '16', chunk: 'be scheduled to', meaning: 'planned to happen at a certain time', example: 'The train is scheduled to arrive at 4:30 PM.', status: 'mastered', interval: 22 },
+      { id: '17', chunk: 'on behalf of', meaning: 'representing someone or a group', example: 'I am signing this contract on behalf of our CEO.', status: 'learning', interval: 4 },
+      { id: '18', chunk: 'out of order', meaning: 'broken or not functioning properly', example: 'The printer on the second floor is currently out of order.', status: 'mastered', interval: 25 },
+      { id: '19', chunk: 'bring about', meaning: 'cause something to happen', example: 'The new software will bring about greater productivity.', status: 'struggling', interval: 1 },
+      { id: '20', chunk: 'be committed to', meaning: 'dedicated to giving time and energy to a cause', example: 'We are committed to providing top-quality service.', status: 'learning', interval: 3 },
+      { id: '21', chunk: 'in accordance with', meaning: 'following or agreeing with a rule or request', example: 'All procedures were conducted in accordance with protocol.', status: 'learning', interval: 3 },
+      { id: '22', chunk: 'pertain to', meaning: 'be related or relevant to a topic', example: 'These documents pertain to the merger agreement.', status: 'struggling', interval: 1 },
+      { id: '23', chunk: 'put off', meaning: 'postpone or delay an event', example: 'They had to put off the product launch until next quarter.', status: 'learning', interval: 2 },
+      { id: '24', chunk: 'attribute to', meaning: 'believe that something is caused by', example: 'Success was attributed to hard work and strategy.', status: 'learning', interval: 3 },
+      { id: '25', chunk: 'be associated with', meaning: 'connected to or linked with', example: 'There are several risks associated with this investment.', status: 'mastered', interval: 16 },
+      { id: '26', chunk: 'fill out', meaning: 'complete a form with details', example: 'Please fill out this application form completely.', status: 'mastered', interval: 28 },
+      { id: '27', chunk: 'take into account', meaning: 'consider a fact when making a decision', example: 'We must take budget limits into account before proceeding.', status: 'learning', interval: 4 },
+      { id: '28', chunk: 'in light of', meaning: 'because of / considering new facts', example: 'In light of recent sales figures, we are revising our goals.', status: 'struggling', interval: 1 },
+      { id: '29', chunk: 'strive to', meaning: 'try very hard to achieve something', example: 'We strive to deliver excellent customer experience.', status: 'learning', interval: 3 },
+      { id: '30', chunk: 'pave the way for', meaning: 'create conditions for development to happen', example: 'This deal will pave the way for international expansion.', status: 'struggling', interval: 1 }
     ];
 
     let chunks = [];
@@ -216,7 +237,6 @@
     let isFlipped = false;
     let dailyCompletedCount = 0;
 
-    // Initialize App Data
     function initApp() {
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
@@ -233,9 +253,11 @@
     function saveData() {
       localStorage.setItem('toeic_chunks', JSON.stringify(chunks));
       updateDashboard();
+      if (!document.getElementById('tab-library').classList.contains('hidden')) {
+        renderLibrary();
+      }
     }
 
-    // Speech Functionality
     function speakText(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -246,7 +268,6 @@
       }
     }
 
-    // Load Flashcard
     let currentCard = null;
     function loadCard() {
       if (chunks.length === 0) return;
@@ -279,7 +300,6 @@
       }
     }
 
-    // Process SRS Decision
     function processSRS(type) {
       if (!isFlipped) return;
       
@@ -303,7 +323,6 @@
       loadCard();
     }
 
-    // Navigation & Tabs
     function switchTab(tab) {
       ['study', 'stats', 'library'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
@@ -316,7 +335,6 @@
       if (tab === 'library') renderLibrary();
     }
 
-    // Update Dashboard Metrics
     function updateDashboard() {
       const total = chunks.length;
       const mastered = chunks.filter(c => c.status === 'mastered').length;
@@ -333,7 +351,6 @@
       document.getElementById('bar-struggling').style.width = `${(struggling/total)*100 || 0}%`;
     }
 
-    // Render Library
     function renderLibrary() {
       const filter = document.getElementById('library-filter').value;
       const container = document.getElementById('library-list');
@@ -343,47 +360,86 @@
       
       filtered.forEach(c => {
         const item = document.createElement('div');
-        item.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2";
+        item.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative group";
         item.innerHTML = `
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-start">
             <h4 class="font-bold text-white text-base">${c.chunk}</h4>
-            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${c.status === 'mastered' ? 'bg-emerald-950 text-emerald-400' : c.status === 'learning' ? 'bg-amber-950 text-amber-400' : 'bg-red-950 text-red-400'}">${c.status}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${c.status === 'mastered' ? 'bg-emerald-950 text-emerald-400' : c.status === 'learning' ? 'bg-amber-950 text-amber-400' : 'bg-red-950 text-red-400'}">${c.status}</span>
+              <button onclick="openEditModal('${c.id}')" class="text-slate-400 hover:text-indigo-400 p-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+              <button onclick="deleteChunk('${c.id}')" class="text-slate-400 hover:text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
           </div>
           <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
           <p class="text-xs text-slate-400 italic">"${c.example}"</p>
         `;
         container.appendChild(item);
       });
+      lucide.createIcons();
     }
 
-    // Modal Control
-    function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+    function openAddModal() {
+      document.getElementById('modal-title').innerText = "Add New Chunk";
+      document.getElementById('input-id').value = '';
+      document.getElementById('input-chunk').value = '';
+      document.getElementById('input-meaning').value = '';
+      document.getElementById('input-example').value = '';
+      document.getElementById('add-modal').classList.remove('hidden');
+    }
+
+    function openEditModal(id) {
+      const target = chunks.find(c => c.id === id);
+      if (!target) return;
+      document.getElementById('modal-title').innerText = "Edit Chunk";
+      document.getElementById('input-id').value = target.id;
+      document.getElementById('input-chunk').value = target.chunk;
+      document.getElementById('input-meaning').value = target.meaning;
+      document.getElementById('input-example').value = target.example;
+      document.getElementById('add-modal').classList.remove('hidden');
+    }
+
+    function deleteChunk(id) {
+      if (confirm('Are you sure you want to delete this chunk?')) {
+        chunks = chunks.filter(c => c.id !== id);
+        saveData();
+        renderLibrary();
+      }
+    }
+
     function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
-    function handleAddChunk(e) {
+    
+    function handleSaveChunk(e) {
       e.preventDefault();
-      const newChunk = {
-        id: Date.now().toString(),
-        chunk: document.getElementById('input-chunk').value,
-        meaning: document.getElementById('input-meaning').value,
-        example: document.getElementById('input-example').value,
-        status: 'struggling',
-        interval: 1,
-        nextReview: Date.now()
-      };
-      chunks.unshift(newChunk);
+      const id = document.getElementById('input-id').value;
+      const chunkVal = document.getElementById('input-chunk').value;
+      const meaningVal = document.getElementById('input-meaning').value;
+      const exampleVal = document.getElementById('input-example').value;
+
+      if (id) {
+        // Edit Existing
+        const target = chunks.find(c => c.id === id);
+        if (target) {
+          target.chunk = chunkVal;
+          target.meaning = meaningVal;
+          target.example = exampleVal;
+        }
+      } else {
+        // Add New
+        const newChunk = {
+          id: Date.now().toString(),
+          chunk: chunkVal,
+          meaning: meaningVal,
+          example: exampleVal,
+          status: 'struggling',
+          interval: 1
+        };
+        chunks.unshift(newChunk);
+      }
+
       saveData();
       closeAddModal();
-      e.target.reset();
-      switchTab('study');
+      loadCard();
     }
-
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') { e.preventDefault(); flipCard(); }
-      else if (e.key === '1') processSRS('hard');
-      else if (e.key === '2') processSRS('good');
-      else if (e.key === '3') processSRS('easy');
-    });
 
     window.onload = initApp;
   </script>
