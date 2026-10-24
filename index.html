@@ -17,16 +17,26 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Header / Navbar (Optimized: Title on Top, Actions on Bottom Row) -->
+  <!-- Header / Navbar -->
   <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2.5">
-      <!-- Top Row: App Title -->
+      <!-- Top Row: App Title & Accent Accent Selector & Streak -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
           <h1 class="font-bold text-base sm:text-lg text-white tracking-tight">TOEIC Chunks</h1>
         </div>
-        <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
+        
+        <div class="flex items-center gap-2">
+          <!-- 4 Accent Selector (US, UK, CA, AU) -->
+          <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
+            <option value="en-US">🇺🇸 US</option>
+            <option value="en-GB">🇬🇧 UK</option>
+            <option value="en-CA">🇨🇦 CA</option>
+            <option value="en-AU">🇦🇺 AU</option>
+          </select>
+          <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
+        </div>
       </div>
 
       <!-- Bottom Row: Navigation Tabs & Action Buttons -->
@@ -93,7 +103,7 @@
 
           <!-- Back Face -->
           <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-5 bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-y-auto">
-            <!-- Meaning Section with Separate Audio -->
+            <!-- Meaning Section -->
             <div class="space-y-1 border-b border-slate-700/80 pb-3">
               <div class="flex justify-between items-center">
                 <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Simple Meaning</span>
@@ -104,7 +114,7 @@
               <p id="card-meaning" class="text-base font-bold text-emerald-400">--</p>
             </div>
 
-            <!-- Example Sentences Section with Separate Audios -->
+            <!-- Example Sentences Section -->
             <div class="space-y-2 my-auto">
               <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
                 <div class="flex justify-between items-center mb-0.5">
@@ -203,7 +213,7 @@
 
   </main>
 
-  <!-- Add / Edit Modal (Updated with 2 Example Fields) -->
+  <!-- Add / Edit Modal -->
   <div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-title" class="text-lg font-bold text-white">Add New Chunk</h3>
@@ -262,12 +272,16 @@
     let isShuffleOn = false;
     let dailyCompletedCount = 0;
     let streakCount = 0;
+    let currentAccent = 'en-US';
 
     function initApp() {
+      // Load Accent Preference
+      currentAccent = localStorage.getItem('toeic_accent') || 'en-US';
+      document.getElementById('accent-select').value = currentAccent;
+
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
         chunks = JSON.parse(savedChunks);
-        // Compatibility check for older 1-example schema
         chunks.forEach(c => {
           if (!c.example1 && c.example) c.example1 = c.example;
           if (!c.example2) c.example2 = c.example1 || '';
@@ -282,6 +296,11 @@
       lucide.createIcons();
       updateDashboard();
       loadCard();
+    }
+
+    function changeAccent(accent) {
+      currentAccent = accent;
+      localStorage.setItem('toeic_accent', accent);
     }
 
     function checkAndUpdateStreak() {
@@ -518,8 +537,18 @@
       if ('speechSynthesis' in window && text) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
+        
+        // Dynamic Accent Selection
+        utterance.lang = currentAccent;
         utterance.rate = 0.9;
+        
+        // Find best matching voice installed on device
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoice = voices.find(v => v.lang.startsWith(currentAccent) || v.lang.replace('_', '-').startsWith(currentAccent));
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+
         window.speechSynthesis.speak(utterance);
       }
     }
