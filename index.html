@@ -27,7 +27,7 @@
         </div>
         
         <div class="flex items-center gap-2">
-          <!-- 4 Accent Selector -->
+          <!-- Accent Selector -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
             <option value="en-US">🇺🇸 US</option>
             <option value="en-GB">🇬🇧 UK</option>
@@ -261,17 +261,10 @@
     let dailyCompletedCount = 0;
     let streakCount = 0;
     let currentAccent = 'en-US';
-    let availableVoices = [];
 
     function initApp() {
-      currentAccent = localStorage.getItem('toeic_accent') || 'en-AU'; // 預設或抓取
+      currentAccent = localStorage.getItem('toeic_accent') || 'en-US';
       document.getElementById('accent-select').value = currentAccent;
-
-      // 載入系統語音清單（瀏覽器需要時間非同步載入）
-      if ('speechSynthesis' in window) {
-        loadVoices();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-      }
 
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
@@ -290,12 +283,6 @@
       lucide.createIcons();
       updateDashboard();
       loadCard();
-    }
-
-    function loadVoices() {
-      if ('speechSynthesis' in window) {
-        availableVoices = window.speechSynthesis.getVoices();
-      }
     }
 
     function changeAccent(accent) {
@@ -533,7 +520,49 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
-    // 強制語音匹配與發音函式
+    // 高級語音篩選演算法 (解決加拿大與音質優先順序問題)
+    function getBestVoice(targetLang) {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+
+      const langCode = targetLang.toLowerCase();
+      const countryCode = targetLang.split('-')[1]?.toLowerCase() || '';
+
+      // 1. 篩選出該語系/國家的所有語音
+      let matchingVoices = voices.filter(v => {
+        const vLang = v.lang.replace('_', '-').toLowerCase();
+        return vLang === langCode || vLang.startsWith(langCode);
+      });
+
+      // 針對加拿大的特殊處理：若無 en-CA 語音，撈出包含 "Canada" 或 "CA" 的語音
+      if (matchingVoices.length === 0 && countryCode === 'ca') {
+        matchingVoices = voices.filter(v => 
+          v.name.toLowerCase().includes('canada') || 
+          v.lang.toLowerCase().includes('ca')
+        );
+      }
+
+      // 若完全找不到該國語音，Fallback 降級抓 en-US
+      if (matchingVoices.length === 0) {
+        matchingVoices = voices.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith('en-us'));
+      }
+
+      // 2. 音質優先順序（排序：Enhanced/Premium/Siri > 自然音 > 一般聲音）
+      matchingVoices.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+
+        const isEnhancedA = nameA.includes('enhanced') || nameA.includes('premium') || nameA.includes('siri');
+        const isEnhancedB = nameB.includes('enhanced') || nameB.includes('premium') || nameB.includes('siri');
+
+        if (isEnhancedA && !isEnhancedB) return -1;
+        if (!isEnhancedA && isEnhancedB) return 1;
+        return 0;
+      });
+
+      return matchingVoices[0] || null;
+    }
+
     function speakText(text) {
       if (!('speechSynthesis' in window) || !text) return;
       window.speechSynthesis.cancel();
@@ -542,22 +571,9 @@
       utterance.rate = 0.9;
       utterance.lang = currentAccent;
 
-      // 嚴格在裝置中找出對應的語音（特別是 en-AU, en-GB 等）
-      if (availableVoices.length === 0) {
-        availableVoices = window.speechSynthesis.getVoices();
-      }
-
-      // 優先找完全符合語言代碼的語音包（例如 en-AU）
-      let targetVoice = availableVoices.find(v => v.lang.toLowerCase() === currentAccent.toLowerCase() || v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
-      
-      // 如果找不到精確的，找開頭符合的（例如 en 開頭且包含 AU）
-      if (!targetVoice) {
-        const shortCode = currentAccent.split('-')[1]; // AU, GB, US, CA
-        targetVoice = availableVoices.find(v => v.lang.toUpperCase().includes(shortCode));
-      }
-
-      if (targetVoice) {
-        utterance.voice = targetVoice;
+      const bestVoice = getBestVoice(currentAccent);
+      if (bestVoice) {
+        utterance.voice = bestVoice;
       }
 
       window.speechSynthesis.speak(utterance);
