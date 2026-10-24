@@ -27,12 +27,11 @@
         </div>
         
         <div class="flex items-center gap-2">
-          <!-- Accent Selector -->
+          <!-- 3 Accent Selector (US, UK, AU) -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
-            <option value="en">🇺🇸 US (American)</option>
-            <option value="en-GB">🇬🇧 UK (British)</option>
-            <option value="en-CA">🇨🇦 CA (Canadian)</option>
-            <option value="en-AU">🇦🇺 AU (Australian)</option>
+            <option value="en-US">🇺🇸 US</option>
+            <option value="en-GB">🇬🇧 UK</option>
+            <option value="en-AU">🇦🇺 AU</option>
           </select>
           <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
         </div>
@@ -260,11 +259,18 @@
     let isShuffleOn = false;
     let dailyCompletedCount = 0;
     let streakCount = 0;
-    let currentAccent = 'en';
+    let currentAccent = 'en-US';
+    let availableVoices = [];
 
     function initApp() {
-      currentAccent = localStorage.getItem('toeic_accent') || 'en';
+      currentAccent = localStorage.getItem('toeic_accent') || 'en-AU'; // 預設或抓取
       document.getElementById('accent-select').value = currentAccent;
+
+      // 載入系統語音清單（瀏覽器需要時間非同步載入）
+      if ('speechSynthesis' in window) {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
 
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
@@ -283,6 +289,12 @@
       lucide.createIcons();
       updateDashboard();
       loadCard();
+    }
+
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
     }
 
     function changeAccent(accent) {
@@ -520,16 +532,34 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
-    // 使用 Google TTS API 串流，真正支援多國口音 (US, UK, CA, AU)
+    // 強制語音匹配與發音函式
     function speakText(text) {
-      if (!text) return;
-      const encodedText = encodeURIComponent(text);
-      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${currentAccent}&client=tw-ob`;
-      const audio = new Audio(audioUrl);
-      audio.play().catch(err => {
-        console.error("Audio playback error:", err);
-        alert("Audio playback failed.");
-      });
+      if (!('speechSynthesis' in window) || !text) return;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.lang = currentAccent;
+
+      // 嚴格在裝置中找出對應的語音（特別是 en-AU, en-GB 等）
+      if (availableVoices.length === 0) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+
+      // 優先找完全符合語言代碼的語音包（例如 en-AU）
+      let targetVoice = availableVoices.find(v => v.lang.toLowerCase() === currentAccent.toLowerCase() || v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
+      
+      // 如果找不到精確的，找開頭符合的（例如 en 開頭且包含 AU）
+      if (!targetVoice) {
+        const shortCode = currentAccent.split('-')[1]; // AU, GB, US
+        targetVoice = availableVoices.find(v => v.lang.toUpperCase().includes(shortCode));
+      }
+
+      if (targetVoice) {
+        utterance.voice = targetVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
     }
 
     function openAddModal() {
