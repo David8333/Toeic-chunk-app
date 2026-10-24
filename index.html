@@ -27,11 +27,11 @@
         </div>
         
         <div class="flex items-center gap-2">
-          <!-- Accent Selector (US, UK, AU only) -->
+          <!-- Clean Accent Selector (Flag + Code) -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
             <option value="en-US">🇺🇸 US</option>
             <option value="en-GB">🇬🇧 UK</option>
-            <option value="en-AU">🇦🇺 AU (Lee / Enhanced)</option>
+            <option value="en-AU">🇦🇺 AU</option>
           </select>
           <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
         </div>
@@ -519,7 +519,7 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
-    // 支援「Lee」、「Enhanced」、「Siri」增強音質優先選擇的發音引擎
+    // 支援 Lee、Enhanced、Siri 優先選用的發音引擎
     function speakText(text) {
       if (!('speechSynthesis' in window) || !text) return;
       window.speechSynthesis.cancel();
@@ -529,97 +529,4 @@
       utterance.rate = 0.9;
 
       const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        let matchedVoice = null;
-
-        if (currentAccent === 'en-AU') {
-          // 澳洲腔優先尋找：1. 名字帶 "Lee" 的語音 2. 帶 Enhanced / Siri / Premium 的澳洲語音
-          matchedVoice = voices.find(v => v.name.toLowerCase().includes('lee') && (v.lang.includes('AU') || v.lang.includes('au'))) ||
-                         voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('en-au') && (v.name.toLowerCase().includes('enhanced') || v.name.toLowerCase().includes('siri') || v.name.toLowerCase().includes('premium'))) ||
-                         voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('en-au'));
-        } else {
-          // 美式與英式：優先找 Enhanced / Siri，再找精確語系
-          matchedVoice = voices.find(v => v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase() && (v.name.toLowerCase().includes('enhanced') || v.name.toLowerCase().includes('siri'))) ||
-                         voices.find(v => v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
-        }
-
-        if (matchedVoice) {
-          utterance.voice = matchedVoice;
-        }
-      }
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function openAddModal() {
-      document.getElementById('modal-title').innerText = "Add New Chunk";
-      document.getElementById('input-id').value = '';
-      document.getElementById('input-chunk').value = '';
-      document.getElementById('input-meaning').value = '';
-      document.getElementById('input-example1').value = '';
-      document.getElementById('input-example2').value = '';
-      document.getElementById('add-modal').classList.remove('hidden');
-    }
-
-    function openEditModal(id) {
-      const target = chunks.find(c => c.id === id);
-      if (!target) return;
-      document.getElementById('modal-title').innerText = "Edit Chunk";
-      document.getElementById('input-id').value = target.id;
-      document.getElementById('input-chunk').value = target.chunk;
-      document.getElementById('input-meaning').value = target.meaning;
-      document.getElementById('input-example1').value = target.example1 || target.example || '';
-      document.getElementById('input-example2').value = target.example2 || '';
-      document.getElementById('add-modal').classList.remove('hidden');
-    }
-
-    function deleteChunk(id) {
-      if (confirm('Are you sure you want to delete this chunk?')) {
-        chunks = chunks.filter(c => c.id !== id);
-        saveData();
-        initStudyQueue();
-        loadCard();
-      }
-    }
-
-    function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
-    
-    function handleSaveChunk(e) {
-      e.preventDefault();
-      const id = document.getElementById('input-id').value;
-      const chunkVal = document.getElementById('input-chunk').value;
-      const meaningVal = document.getElementById('input-meaning').value;
-      const example1Val = document.getElementById('input-example1').value;
-      const example2Val = document.getElementById('input-example2').value;
-
-      if (id) {
-        const target = chunks.find(c => c.id === id);
-        if (target) {
-          target.chunk = chunkVal;
-          target.meaning = meaningVal;
-          target.example1 = example1Val;
-          target.example2 = example2Val;
-        }
-      } else {
-        const newChunk = {
-          id: Date.now().toString(),
-          chunk: chunkVal,
-          meaning: meaningVal,
-          example1: example1Val,
-          example2: example2Val,
-          status: 'struggling',
-          interval: 1
-        };
-        chunks.unshift(newChunk);
-      }
-
-      saveData();
-      closeAddModal();
-      initStudyQueue();
-      loadCard();
-    }
-
-    window.onload = initApp;
-  </script>
-</body>
-</html>
+      if (
