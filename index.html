@@ -20,7 +20,6 @@
   <!-- Header / Navbar -->
   <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2.5">
-      <!-- Top Row: App Title & Accent Accent Selector & Streak -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
@@ -28,7 +27,7 @@
         </div>
         
         <div class="flex items-center gap-2">
-          <!-- 4 Accent Selector (US, UK, CA, AU) -->
+          <!-- 4 Accent Selector -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
             <option value="en-US">🇺🇸 US</option>
             <option value="en-GB">🇬🇧 UK</option>
@@ -39,7 +38,6 @@
         </div>
       </div>
 
-      <!-- Bottom Row: Navigation Tabs & Action Buttons -->
       <div class="flex items-center justify-between border-t border-slate-800/80 pt-2">
         <div class="flex items-center gap-1.5">
           <button id="tab-study-btn" onclick="switchTab('study')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">Study</button>
@@ -61,12 +59,9 @@
     </div>
   </header>
 
-  <!-- Main Content Area -->
   <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col">
-
     <!-- STUDY TAB -->
     <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-      <!-- Daily Progress Header -->
       <div class="w-full mb-6 bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
         <div class="flex justify-between items-center">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
@@ -82,11 +77,9 @@
         </div>
       </div>
 
-      <!-- Flashcard Container -->
       <div id="card-container" class="w-full aspect-[4/3] min-h-[320px] perspective-1000 cursor-pointer mb-6 group" onclick="flipCard()">
         <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800 flex flex-col justify-between p-5">
           
-          <!-- Front Face -->
           <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-6 bg-slate-800 rounded-2xl">
             <div class="flex justify-between items-center">
               <span id="card-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300">New Chunk</span>
@@ -101,9 +94,7 @@
             <div class="text-center text-xs text-slate-400">FRONT</div>
           </div>
 
-          <!-- Back Face -->
           <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-5 bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-y-auto">
-            <!-- Meaning Section -->
             <div class="space-y-1 border-b border-slate-700/80 pb-3">
               <div class="flex justify-between items-center">
                 <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Simple Meaning</span>
@@ -114,7 +105,6 @@
               <p id="card-meaning" class="text-base font-bold text-emerald-400">--</p>
             </div>
 
-            <!-- Example Sentences Section -->
             <div class="space-y-2 my-auto">
               <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
                 <div class="flex justify-between items-center mb-0.5">
@@ -143,7 +133,6 @@
         </div>
       </div>
 
-      <!-- SRS Response Buttons -->
       <div id="srs-controls" class="w-full grid grid-cols-3 gap-3 opacity-50 pointer-events-none transition-all duration-300">
         <button onclick="processSRS('hard')" class="flex flex-col items-center py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 rounded-xl transition">
           <span class="font-bold text-sm">Hard</span>
@@ -210,7 +199,6 @@
       </div>
       <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
     </div>
-
   </main>
 
   <!-- Add / Edit Modal -->
@@ -273,11 +261,17 @@
     let dailyCompletedCount = 0;
     let streakCount = 0;
     let currentAccent = 'en-US';
+    let availableVoices = [];
 
     function initApp() {
-      // Load Accent Preference
-      currentAccent = localStorage.getItem('toeic_accent') || 'en-US';
+      currentAccent = localStorage.getItem('toeic_accent') || 'en-AU'; // 預設或抓取
       document.getElementById('accent-select').value = currentAccent;
+
+      // 載入系統語音清單（瀏覽器需要時間非同步載入）
+      if ('speechSynthesis' in window) {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
 
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
@@ -296,6 +290,12 @@
       lucide.createIcons();
       updateDashboard();
       loadCard();
+    }
+
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
     }
 
     function changeAccent(accent) {
@@ -533,24 +533,34 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
+    // 強制語音匹配與發音函式
     function speakText(text) {
-      if ('speechSynthesis' in window && text) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Dynamic Accent Selection
-        utterance.lang = currentAccent;
-        utterance.rate = 0.9;
-        
-        // Find best matching voice installed on device
-        const voices = window.speechSynthesis.getVoices();
-        const selectedVoice = voices.find(v => v.lang.startsWith(currentAccent) || v.lang.replace('_', '-').startsWith(currentAccent));
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-        }
+      if (!('speechSynthesis' in window) || !text) return;
+      window.speechSynthesis.cancel();
 
-        window.speechSynthesis.speak(utterance);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.lang = currentAccent;
+
+      // 嚴格在裝置中找出對應的語音（特別是 en-AU, en-GB 等）
+      if (availableVoices.length === 0) {
+        availableVoices = window.speechSynthesis.getVoices();
       }
+
+      // 優先找完全符合語言代碼的語音包（例如 en-AU）
+      let targetVoice = availableVoices.find(v => v.lang.toLowerCase() === currentAccent.toLowerCase() || v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
+      
+      // 如果找不到精確的，找開頭符合的（例如 en 開頭且包含 AU）
+      if (!targetVoice) {
+        const shortCode = currentAccent.split('-')[1]; // AU, GB, US, CA
+        targetVoice = availableVoices.find(v => v.lang.toUpperCase().includes(shortCode));
+      }
+
+      if (targetVoice) {
+        utterance.voice = targetVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
     }
 
     function openAddModal() {
