@@ -17,36 +17,36 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Header / Navbar -->
-  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-5xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
-      <!-- App Title Section (Optimized for Mobile) -->
-      <div class="flex items-center gap-2 shrink-0">
-        <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
-        <div>
-          <h1 class="font-bold text-sm sm:text-lg leading-none whitespace-nowrap">
-            <span class="sm:hidden">TOEIC Chunks</span>
-            <span class="hidden sm:inline">TOEIC Chunk Master</span>
-          </h1>
-          <p class="hidden sm:block text-xs text-slate-400 mt-0.5">E-E Spaced Repetition System</p>
+  <!-- Header / Navbar (Optimized: Title on Top, Actions on Bottom Row) -->
+  <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2.5">
+      <!-- Top Row: App Title -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
+          <h1 class="font-bold text-base sm:text-lg text-white tracking-tight">TOEIC Chunks</h1>
         </div>
+        <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex items-center gap-1 sm:gap-2">
-        <button id="tab-study-btn" onclick="switchTab('study')" class="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">Study</button>
-        <button id="tab-stats-btn" onclick="switchTab('stats')" class="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Dash</button>
-        <button id="tab-library-btn" onclick="switchTab('library')" class="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Library</button>
-        
-        <button onclick="exportData()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="Export Backup">
-          <i data-lucide="upload" class="w-4 h-4"></i>
-        </button>
-        <button onclick="openImportModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 transition" title="Import Data">
-          <i data-lucide="download" class="w-4 h-4"></i>
-        </button>
-        <button onclick="openAddModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 transition" title="Add New Chunk">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        </button>
+      <!-- Bottom Row: Navigation Tabs & Action Buttons -->
+      <div class="flex items-center justify-between border-t border-slate-800/80 pt-2">
+        <div class="flex items-center gap-1.5">
+          <button id="tab-study-btn" onclick="switchTab('study')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">Study</button>
+          <button id="tab-stats-btn" onclick="switchTab('stats')" class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Dash</button>
+          <button id="tab-library-btn" onclick="switchTab('library')" class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Library</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="exportData()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="Export Backup">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+          </button>
+          <button onclick="openImportModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 transition" title="Import Data">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </button>
+          <button onclick="openAddModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 transition" title="Add New Chunk">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -56,28 +56,25 @@
 
     <!-- STUDY TAB -->
     <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-      <!-- Daily Progress & Streak Header -->
-      <div class="w-full mb-6 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 space-y-3">
+      <!-- Daily Progress Header -->
+      <div class="w-full mb-6 bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
         <div class="flex justify-between items-center">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
-          <div class="flex items-center gap-3">
-            <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-0.5 rounded-full border border-orange-800/50">🔥 0 Streak</span>
-            <span class="text-xs font-bold text-indigo-400" id="daily-progress-text">0 / 30 Completed</span>
-          </div>
+          <span class="text-xs font-bold text-indigo-400" id="daily-progress-text">0 / 30 Completed</span>
         </div>
-        <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
-          <div id="daily-progress-bar" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div id="daily-progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <div class="flex justify-end pt-1">
-          <button onclick="toggleShuffle()" id="shuffle-btn" class="text-xs px-3 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5">
+        <div class="flex justify-end pt-0.5">
+          <button onclick="toggleShuffle()" id="shuffle-btn" class="text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5">
             <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF
           </button>
         </div>
       </div>
 
       <!-- Flashcard Container -->
-      <div id="card-container" class="w-full aspect-[4/3] min-h-[300px] perspective-1000 cursor-pointer mb-6 group" onclick="flipCard()">
-        <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800 flex flex-col justify-between p-6">
+      <div id="card-container" class="w-full aspect-[4/3] min-h-[320px] perspective-1000 cursor-pointer mb-6 group" onclick="flipCard()">
+        <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800 flex flex-col justify-between p-5">
           
           <!-- Front Face -->
           <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-6 bg-slate-800 rounded-2xl">
@@ -95,27 +92,42 @@
           </div>
 
           <!-- Back Face -->
-          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-6 bg-slate-800 border border-indigo-500/30 rounded-2xl">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-              <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Simple English Meaning</span>
-              <button onclick="event.stopPropagation(); speakText(currentCard.meaning + '. ' + currentCard.example)" class="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">
-                <i data-lucide="volume-2" class="w-6 h-6"></i>
-              </button>
+          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-5 bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-y-auto">
+            <!-- Meaning Section with Separate Audio -->
+            <div class="space-y-1 border-b border-slate-700/80 pb-3">
+              <div class="flex justify-between items-center">
+                <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Simple Meaning</span>
+                <button onclick="event.stopPropagation(); speakText(currentCard.meaning)" class="p-1.5 rounded-full hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition" title="Pronounce Meaning">
+                  <i data-lucide="volume-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <p id="card-meaning" class="text-base font-bold text-emerald-400">--</p>
             </div>
-            <div class="my-auto space-y-3 text-left">
-              <div>
-                <p id="card-meaning" class="text-lg font-bold text-emerald-400">--</p>
+
+            <!-- Example Sentences Section with Separate Audios -->
+            <div class="space-y-2 my-auto">
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
+                <div class="flex justify-between items-center mb-0.5">
+                  <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 1</span>
+                  <button onclick="event.stopPropagation(); speakText(currentCard.example1)" class="p-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition" title="Pronounce Example 1">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <p id="card-example1" class="text-xs md:text-sm text-slate-200 italic">"--"</p>
               </div>
-              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50">
-                <p class="text-[10px] text-slate-400 font-semibold mb-0.5">EXAMPLE SENTENCE</p>
-                <p id="card-example" class="text-xs md:text-sm text-slate-200 italic">"--"</p>
-              </div>
-              <div class="flex justify-between items-center text-[11px] text-slate-400 bg-slate-900/40 px-3 py-1.5 rounded-lg border border-slate-800">
-                <span>🔄 Reviews: <strong id="card-reviews" class="text-white">0</strong></span>
-                <span>⏳ Interval: <strong id="card-interval" class="text-amber-400">1 day</strong></span>
+
+              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
+                <div class="flex justify-between items-center mb-0.5">
+                  <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 2</span>
+                  <button onclick="event.stopPropagation(); speakText(currentCard.example2)" class="p-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition" title="Pronounce Example 2">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <p id="card-example2" class="text-xs md:text-sm text-slate-200 italic">"--"</p>
               </div>
             </div>
-            <div class="text-center text-xs text-slate-400 border-t border-slate-700 pt-1">BACK</div>
+
+            <div class="text-center text-[10px] text-slate-500 border-t border-slate-700/60 pt-1">BACK</div>
           </div>
 
         </div>
@@ -191,9 +203,9 @@
 
   </main>
 
-  <!-- Add / Edit Modal -->
+  <!-- Add / Edit Modal (Updated with 2 Example Fields) -->
   <div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modal-title" class="text-lg font-bold text-white">Add New Chunk</h3>
       <form onsubmit="handleSaveChunk(event)" class="space-y-3">
         <input type="hidden" id="input-id">
@@ -206,8 +218,12 @@
           <input type="text" id="input-meaning" required placeholder="e.g., likely to change depending on" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE</label>
-          <textarea id="input-example" required rows="2" placeholder="e.g., Schedules are subject to change." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 1</label>
+          <textarea id="input-example1" required rows="2" placeholder="e.g., Schedules are subject to change." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 2</label>
+          <textarea id="input-example2" required rows="2" placeholder="e.g., Prices are subject to approval." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300 hover:bg-slate-600">Cancel</button>
@@ -232,11 +248,11 @@
 
   <script>
     const starterChunks = [
-      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example: 'Flight schedules are subject to change due to poor weather.', status: 'struggling', interval: 1, reviews: 0 },
-      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example: 'All staff must comply with safety regulations in the lab.', status: 'learning', interval: 3, reviews: 0 },
-      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example: 'You can always turn to the IT department for tech support.', status: 'struggling', interval: 1, reviews: 0 },
-      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example: 'The team is currently working on a new marketing campaign.', status: 'learning', interval: 3, reviews: 0 },
-      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example: 'The incorporation of AI tools significantly increased output.', status: 'mastered', interval: 14, reviews: 0 }
+      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example1: 'Flight schedules are subject to change due to poor weather.', example2: 'The proposed plan is subject to final review.', status: 'struggling', interval: 1 },
+      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example1: 'All staff must comply with safety regulations in the lab.', example2: 'Failure to comply with policies may result in penalties.', status: 'learning', interval: 3 },
+      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example1: 'You can always turn to the IT department for tech support.', example2: 'She turned to her manager for career guidance.', status: 'struggling', interval: 1 },
+      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example1: 'The team is currently working on a new marketing campaign.', example2: 'Engineers are working on fixing the system bug.', status: 'learning', interval: 3 },
+      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example1: 'The incorporation of AI tools significantly increased output.', example2: 'The incorporation of feedback improved the product.', status: 'mastered', interval: 14 }
     ];
 
     let chunks = [];
@@ -244,7 +260,6 @@
     let currentQueueIndex = 0;
     let isFlipped = false;
     let isShuffleOn = false;
-    
     let dailyCompletedCount = 0;
     let streakCount = 0;
 
@@ -252,7 +267,11 @@
       const savedChunks = localStorage.getItem('toeic_chunks');
       if (savedChunks) {
         chunks = JSON.parse(savedChunks);
-        chunks.forEach(c => { if(c.reviews === undefined) c.reviews = 0; });
+        // Compatibility check for older 1-example schema
+        chunks.forEach(c => {
+          if (!c.example1 && c.example) c.example1 = c.example;
+          if (!c.example2) c.example2 = c.example1 || '';
+        });
       } else {
         chunks = starterChunks;
         saveData();
@@ -321,10 +340,10 @@
       isShuffleOn = !isShuffleOn;
       const btn = document.getElementById('shuffle-btn');
       if (isShuffleOn) {
-        btn.className = "text-xs px-3 py-1 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow-sm";
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow-sm";
         btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: ON`;
       } else {
-        btn.className = "text-xs px-3 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5";
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5";
         btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF`;
       }
       lucide.createIcons();
@@ -344,9 +363,8 @@
       
       document.getElementById('card-chunk').innerText = currentCard.chunk;
       document.getElementById('card-meaning').innerText = currentCard.meaning;
-      document.getElementById('card-example').innerText = `"${currentCard.example}"`;
-      document.getElementById('card-reviews').innerText = currentCard.reviews || 0;
-      document.getElementById('card-interval').innerText = `${currentCard.interval} day${currentCard.interval > 1 ? 's' : ''}`;
+      document.getElementById('card-example1').innerText = `"${currentCard.example1 || ''}"`;
+      document.getElementById('card-example2').innerText = `"${currentCard.example2 || ''}"`;
       
       const badge = document.getElementById('card-status-badge');
       badge.innerText = currentCard.status.toUpperCase();
@@ -373,8 +391,6 @@
 
     function processSRS(type) {
       if (!isFlipped) return;
-      
-      currentCard.reviews = (currentCard.reviews || 0) + 1;
 
       if (type === 'hard') { 
         currentCard.status = 'struggling'; 
@@ -437,7 +453,7 @@
 
       let filtered = chunks.filter(c => {
         const matchesStatus = filter === 'all' || c.status === filter;
-        const matchesSearch = c.chunk.toLowerCase().includes(searchQuery) || c.meaning.toLowerCase().includes(searchQuery) || c.example.toLowerCase().includes(searchQuery);
+        const matchesSearch = c.chunk.toLowerCase().includes(searchQuery) || c.meaning.toLowerCase().includes(searchQuery) || (c.example1 && c.example1.toLowerCase().includes(searchQuery)) || (c.example2 && c.example2.toLowerCase().includes(searchQuery));
         return matchesStatus && matchesSearch;
       });
       
@@ -453,11 +469,19 @@
               <button onclick="deleteChunk('${c.id}')" class="text-slate-400 hover:text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
           </div>
-          <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
-          <p class="text-xs text-slate-400 italic mb-1">"${c.example}"</p>
-          <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-700/60 flex justify-between">
-            <span>Reviews: <strong class="text-slate-200">${c.reviews || 0}</strong></span>
-            <span>Next Interval: <strong class="text-amber-400">${c.interval || 1}d</strong></span>
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
+            <button onclick="speakText('${c.meaning}')" class="text-slate-400 hover:text-emerald-400 p-1"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <div class="space-y-1 pt-1 border-t border-slate-700/60">
+            <div class="flex items-center justify-between text-xs text-slate-300 italic">
+              <span>1. "${c.example1 || ''}"</span>
+              <button onclick="speakText('${c.example1 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-300 italic">
+              <span>2. "${c.example2 || ''}"</span>
+              <button onclick="speakText('${c.example2 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+            </div>
           </div>
         `;
         container.appendChild(item);
@@ -491,7 +515,7 @@
     }
 
     function speakText(text) {
-      if ('speechSynthesis' in window) {
+      if ('speechSynthesis' in window && text) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
@@ -505,7 +529,8 @@
       document.getElementById('input-id').value = '';
       document.getElementById('input-chunk').value = '';
       document.getElementById('input-meaning').value = '';
-      document.getElementById('input-example').value = '';
+      document.getElementById('input-example1').value = '';
+      document.getElementById('input-example2').value = '';
       document.getElementById('add-modal').classList.remove('hidden');
     }
 
@@ -516,7 +541,8 @@
       document.getElementById('input-id').value = target.id;
       document.getElementById('input-chunk').value = target.chunk;
       document.getElementById('input-meaning').value = target.meaning;
-      document.getElementById('input-example').value = target.example;
+      document.getElementById('input-example1').value = target.example1 || target.example || '';
+      document.getElementById('input-example2').value = target.example2 || '';
       document.getElementById('add-modal').classList.remove('hidden');
     }
 
@@ -536,24 +562,26 @@
       const id = document.getElementById('input-id').value;
       const chunkVal = document.getElementById('input-chunk').value;
       const meaningVal = document.getElementById('input-meaning').value;
-      const exampleVal = document.getElementById('input-example').value;
+      const example1Val = document.getElementById('input-example1').value;
+      const example2Val = document.getElementById('input-example2').value;
 
       if (id) {
         const target = chunks.find(c => c.id === id);
         if (target) {
           target.chunk = chunkVal;
           target.meaning = meaningVal;
-          target.example = exampleVal;
+          target.example1 = example1Val;
+          target.example2 = example2Val;
         }
       } else {
         const newChunk = {
           id: Date.now().toString(),
           chunk: chunkVal,
           meaning: meaningVal,
-          example: exampleVal,
+          example1: example1Val,
+          example2: example2Val,
           status: 'struggling',
-          interval: 1,
-          reviews: 0
+          interval: 1
         };
         chunks.unshift(newChunk);
       }
