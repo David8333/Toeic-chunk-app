@@ -301,4 +301,325 @@
       } else {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        if (savedDate === yesterday.toDateString()
+        if (savedDate === yesterday.toDateString() && savedCount >= 30) {
+          streakCount = savedStreak + 1;
+        } else if (savedDate !== todayStr && savedCount < 30 && savedDate) {
+          streakCount = 0;
+        } else {
+          streakCount = savedStreak;
+        }
+        dailyCompletedCount = 0;
+        localStorage.setItem('toeic_last_date', todayStr);
+        localStorage.setItem('toeic_daily_count', '0');
+        localStorage.setItem('toeic_streak', streakCount.toString());
+      }
+      updateProgressUI();
+    }
+
+    function updateProgressUI() {
+      document.getElementById('daily-progress-text').innerText = `${dailyCompletedCount} / 30 Completed`;
+      document.getElementById('daily-progress-bar').style.width = `${Math.min(100, (dailyCompletedCount / 30) * 100)}%`;
+      document.getElementById('streak-badge').innerText = `🔥 ${streakCount} Streak`;
+    }
+
+    function saveData() {
+      localStorage.setItem('toeic_chunks', JSON.stringify(chunks));
+      updateDashboard();
+      if (!document.getElementById('tab-library').classList.contains('hidden')) {
+        renderLibrary();
+      }
+    }
+
+    function initStudyQueue() {
+      studyQueue = chunks.map((_, index) => index);
+      if (isShuffleOn) {
+        for (let i = studyQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [studyQueue[i], studyQueue[j]] = [studyQueue[j], studyQueue[i]];
+        }
+      }
+      currentQueueIndex = 0;
+    }
+
+    function toggleShuffle() {
+      isShuffleOn = !isShuffleOn;
+      const btn = document.getElementById('shuffle-btn');
+      if (isShuffleOn) {
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow-sm";
+        btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: ON`;
+      } else {
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5";
+        btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF`;
+      }
+      lucide.createIcons();
+      initStudyQueue();
+      loadCard();
+    }
+
+    let currentCard = null;
+    function loadCard() {
+      if (chunks.length === 0) return;
+      if (currentQueueIndex >= studyQueue.length) {
+        initStudyQueue();
+      }
+      
+      const realIndex = studyQueue[currentQueueIndex];
+      currentCard = chunks[realIndex];
+      
+      document.getElementById('card-chunk').innerText = currentCard.chunk;
+      document.getElementById('card-meaning').innerText = currentCard.meaning;
+      document.getElementById('card-example1').innerText = `"${currentCard.example1 || ''}"`;
+      document.getElementById('card-example2').innerText = `"${currentCard.example2 || ''}"`;
+      
+      const badge = document.getElementById('card-status-badge');
+      badge.innerText = currentCard.status.toUpperCase();
+      if (currentCard.status === 'mastered') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800";
+      else if (currentCard.status === 'learning') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-300 border border-amber-800";
+      else badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950 text-red-300 border border-red-800";
+
+      if (isFlipped) flipCard();
+    }
+
+    function flipCard() {
+      const inner = document.getElementById('card-inner');
+      const controls = document.getElementById('srs-controls');
+      isFlipped = !isFlipped;
+      
+      if (isFlipped) {
+        inner.classList.add('rotate-y-180');
+        controls.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        inner.classList.remove('rotate-y-180');
+        controls.classList.add('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    function processSRS(type) {
+      if (!isFlipped) return;
+
+      if (type === 'hard') { 
+        currentCard.status = 'struggling'; 
+        currentCard.interval = 1; 
+      } else if (type === 'good') { 
+        currentCard.status = 'learning'; 
+        currentCard.interval = 3; 
+      } else if (type === 'easy') { 
+        currentCard.status = 'mastered'; 
+        currentCard.interval = 14; 
+      }
+      
+      if (dailyCompletedCount < 30) {
+        dailyCompletedCount++;
+        localStorage.setItem('toeic_daily_count', dailyCompletedCount.toString());
+        if (dailyCompletedCount === 30) {
+          streakCount++;
+          localStorage.setItem('toeic_streak', streakCount.toString());
+        }
+      }
+      updateProgressUI();
+
+      saveData();
+      currentQueueIndex++;
+      loadCard();
+    }
+
+    function switchTab(tab) {
+      ['study', 'stats', 'library'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}-btn`).classList.replace('bg-indigo-600', 'hover:bg-slate-800');
+        document.getElementById(`tab-${t}-btn`).classList.replace('text-white', 'text-slate-300');
+      });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}-btn`).classList.add('bg-indigo-600', 'text-white');
+      if (tab === 'library') renderLibrary();
+    }
+
+    function updateDashboard() {
+      const total = chunks.length;
+      const mastered = chunks.filter(c => c.status === 'mastered').length;
+      const learning = chunks.filter(c => c.status === 'learning').length;
+      const struggling = chunks.filter(c => c.status === 'struggling').length;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-mastered').innerText = `${mastered} (${Math.round((mastered/total)*100 || 0)}%)`;
+      document.getElementById('stat-learning').innerText = `${learning} (${Math.round((learning/total)*100 || 0)}%)`;
+      document.getElementById('stat-struggling').innerText = `${struggling} (${Math.round((struggling/total)*100 || 0)}%)`;
+
+      document.getElementById('bar-mastered').style.width = `${(mastered/total)*100 || 0}%`;
+      document.getElementById('bar-learning').style.width = `${(learning/total)*100 || 0}%`;
+      document.getElementById('bar-struggling').style.width = `${(struggling/total)*100 || 0}%`;
+    }
+
+    function renderLibrary() {
+      const filter = document.getElementById('library-filter').value;
+      const searchQuery = document.getElementById('library-search').value.toLowerCase().trim();
+      const container = document.getElementById('library-list');
+      container.innerHTML = '';
+
+      let filtered = chunks.filter(c => {
+        const matchesStatus = filter === 'all' || c.status === filter;
+        const matchesSearch = c.chunk.toLowerCase().includes(searchQuery) || c.meaning.toLowerCase().includes(searchQuery) || (c.example1 && c.example1.toLowerCase().includes(searchQuery)) || (c.example2 && c.example2.toLowerCase().includes(searchQuery));
+        return matchesStatus && matchesSearch;
+      });
+      
+      filtered.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative group";
+        item.innerHTML = `
+          <div class="flex justify-between items-start">
+            <h4 class="font-bold text-white text-base">${c.chunk}</h4>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${c.status === 'mastered' ? 'bg-emerald-950 text-emerald-400' : c.status === 'learning' ? 'bg-amber-950 text-amber-400' : 'bg-red-950 text-red-400'}">${c.status}</span>
+              <button onclick="openEditModal('${c.id}')" class="text-slate-400 hover:text-indigo-400 p-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+              <button onclick="deleteChunk('${c.id}')" class="text-slate-400 hover:text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
+            <button onclick="speakText('${c.meaning}')" class="text-slate-400 hover:text-emerald-400 p-1"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <div class="space-y-1 pt-1 border-t border-slate-700/60">
+            <div class="flex items-center justify-between text-xs text-slate-300 italic">
+              <span>1. "${c.example1 || ''}"</span>
+              <button onclick="speakText('${c.example1 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-300 italic">
+              <span>2. "${c.example2 || ''}"</span>
+              <button onclick="speakText('${c.example2 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function exportData() {
+      const jsonStr = JSON.stringify(chunks);
+      navigator.clipboard.writeText(jsonStr).then(() => {
+        alert('✅ Backup data copied to clipboard!');
+      }).catch(err => { alert('Failed to copy.'); });
+    }
+
+    function openImportModal() { document.getElementById('import-input').value = ''; document.getElementById('import-modal').classList.remove('hidden'); }
+    function closeImportModal() { document.getElementById('import-modal').classList.add('hidden'); }
+    function handleImportData() {
+      const rawText = document.getElementById('import-input').value.trim();
+      if (!rawText) return alert('Please paste your backup text first.');
+      try {
+        const parsed = JSON.parse(rawText);
+        if (Array.isArray(parsed)) {
+          chunks = parsed;
+          saveData();
+          closeImportModal();
+          initStudyQueue();
+          loadCard();
+          alert('🎉 Data successfully imported and synchronized!');
+        } else { alert('Invalid format.'); }
+      } catch (e) { alert('Invalid data code format.'); }
+    }
+
+    // 支援「Lee」、「Enhanced」、「Siri」增強音質優先選擇的發音引擎
+    function speakText(text) {
+      if (!('speechSynthesis' in window) || !text) return;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentAccent;
+      utterance.rate = 0.9;
+
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        let matchedVoice = null;
+
+        if (currentAccent === 'en-AU') {
+          // 澳洲腔優先尋找：1. 名字帶 "Lee" 的語音 2. 帶 Enhanced / Siri / Premium 的澳洲語音
+          matchedVoice = voices.find(v => v.name.toLowerCase().includes('lee') && (v.lang.includes('AU') || v.lang.includes('au'))) ||
+                         voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('en-au') && (v.name.toLowerCase().includes('enhanced') || v.name.toLowerCase().includes('siri') || v.name.toLowerCase().includes('premium'))) ||
+                         voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('en-au'));
+        } else {
+          // 美式與英式：優先找 Enhanced / Siri，再找精確語系
+          matchedVoice = voices.find(v => v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase() && (v.name.toLowerCase().includes('enhanced') || v.name.toLowerCase().includes('siri'))) ||
+                         voices.find(v => v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
+        }
+
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function openAddModal() {
+      document.getElementById('modal-title').innerText = "Add New Chunk";
+      document.getElementById('input-id').value = '';
+      document.getElementById('input-chunk').value = '';
+      document.getElementById('input-meaning').value = '';
+      document.getElementById('input-example1').value = '';
+      document.getElementById('input-example2').value = '';
+      document.getElementById('add-modal').classList.remove('hidden');
+    }
+
+    function openEditModal(id) {
+      const target = chunks.find(c => c.id === id);
+      if (!target) return;
+      document.getElementById('modal-title').innerText = "Edit Chunk";
+      document.getElementById('input-id').value = target.id;
+      document.getElementById('input-chunk').value = target.chunk;
+      document.getElementById('input-meaning').value = target.meaning;
+      document.getElementById('input-example1').value = target.example1 || target.example || '';
+      document.getElementById('input-example2').value = target.example2 || '';
+      document.getElementById('add-modal').classList.remove('hidden');
+    }
+
+    function deleteChunk(id) {
+      if (confirm('Are you sure you want to delete this chunk?')) {
+        chunks = chunks.filter(c => c.id !== id);
+        saveData();
+        initStudyQueue();
+        loadCard();
+      }
+    }
+
+    function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+    
+    function handleSaveChunk(e) {
+      e.preventDefault();
+      const id = document.getElementById('input-id').value;
+      const chunkVal = document.getElementById('input-chunk').value;
+      const meaningVal = document.getElementById('input-meaning').value;
+      const example1Val = document.getElementById('input-example1').value;
+      const example2Val = document.getElementById('input-example2').value;
+
+      if (id) {
+        const target = chunks.find(c => c.id === id);
+        if (target) {
+          target.chunk = chunkVal;
+          target.meaning = meaningVal;
+          target.example1 = example1Val;
+          target.example2 = example2Val;
+        }
+      } else {
+        const newChunk = {
+          id: Date.now().toString(),
+          chunk: chunkVal,
+          meaning: meaningVal,
+          example1: example1Val,
+          example2: example2Val,
+          status: 'struggling',
+          interval: 1
+        };
+        chunks.unshift(newChunk);
+      }
+
+      saveData();
+      closeAddModal();
+      initStudyQueue();
+      loadCard();
+    }
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
