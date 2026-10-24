@@ -29,10 +29,10 @@
         <div class="flex items-center gap-2">
           <!-- Accent Selector -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
-            <option value="en">🇺🇸 US (American)</option>
-            <option value="en-GB">🇬🇧 UK (British)</option>
-            <option value="en-CA">🇨🇦 CA (Canadian)</option>
-            <option value="en-AU">🇦🇺 AU (Australian)</option>
+            <option value="en-US">🇺🇸 US</option>
+            <option value="en-GB">🇬🇧 UK</option>
+            <option value="en-CA">🇨🇦 CA</option>
+            <option value="en-AU">🇦🇺 AU</option>
           </select>
           <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
         </div>
@@ -260,10 +260,10 @@
     let isShuffleOn = false;
     let dailyCompletedCount = 0;
     let streakCount = 0;
-    let currentAccent = 'en';
+    let currentAccent = 'en-US';
 
     function initApp() {
-      currentAccent = localStorage.getItem('toeic_accent') || 'en';
+      currentAccent = localStorage.getItem('toeic_accent') || 'en-US';
       document.getElementById('accent-select').value = currentAccent;
 
       const savedChunks = localStorage.getItem('toeic_chunks');
@@ -520,16 +520,26 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
-    // 使用 Google TTS API 串流，真正支援多國口音 (US, UK, CA, AU)
+    // 穩定的本地語音合成發音引擎
     function speakText(text) {
-      if (!text) return;
-      const encodedText = encodeURIComponent(text);
-      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${currentAccent}&client=tw-ob`;
-      const audio = new Audio(audioUrl);
-      audio.play().catch(err => {
-        console.error("Audio playback error:", err);
-        alert("Audio playback failed.");
-      });
+      if (!('speechSynthesis' in window) || !text) return;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentAccent;
+      utterance.rate = 0.9;
+
+      // 智慧配對裝置內最佳語音
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        const matchedVoice = voices.find(v => v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase()) ||
+                             voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(currentAccent.split('-')[0].toLowerCase()));
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
+      }
+
+      window.speechSynthesis.speak(utterance);
     }
 
     function openAddModal() {
