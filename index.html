@@ -1,636 +1,2171 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>TOEIC Chunk Master - SRS Flashcards</title>
-  <!-- Tailwind CSS CDN -->
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
+
   <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
+
     .perspective-1000 { perspective: 1000px; }
+
     .transform-style-3d { transform-style: preserve-3d; }
+
     .backface-hidden { backface-visibility: hidden; }
+
     .rotate-y-180 { transform: rotateY(180deg); }
+
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
   </style>
+
 </head>
+
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
 
-  <!-- Header / Navbar -->
-  <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2.5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
-          <h1 class="font-bold text-base sm:text-lg text-white tracking-tight">TOEIC Chunks</h1>
-        </div>
-        
-        <div class="flex items-center gap-2">
-          <!-- 3 Accent Selector (US, UK, AU) -->
-          <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
-            <option value="en-US">🇺🇸 US</option>
-            <option value="en-GB">🇬🇧 UK</option>
-            <option value="en-AU">🇦🇺 AU</option>
-          </select>
-          <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
-        </div>
+<header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50">
+
+  <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-2.5">
+
+    <div class="flex items-center justify-between">
+
+      <div class="flex items-center gap-2">
+
+        <div class="p-1.5 bg-indigo-600 rounded-lg text-white font-bold text-sm">TC</div>
+
+        <h1 class="font-bold text-base sm:text-lg text-white tracking-tight">TOEIC Chunks</h1>
+
       </div>
 
-      <div class="flex items-center justify-between border-t border-slate-800/80 pt-2">
-        <div class="flex items-center gap-1.5">
-          <button id="tab-study-btn" onclick="switchTab('study')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">Study</button>
-          <button id="tab-stats-btn" onclick="switchTab('stats')" class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Dash</button>
-          <button id="tab-library-btn" onclick="switchTab('library')" class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300 transition">Library</button>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <button onclick="exportData()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 transition" title="Export Backup">
-            <i data-lucide="upload" class="w-4 h-4"></i>
-          </button>
-          <button onclick="openImportModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 transition" title="Import Data">
-            <i data-lucide="download" class="w-4 h-4"></i>
-          </button>
-          <button onclick="openAddModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 transition" title="Add New Chunk">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          </button>
-        </div>
+      <div class="flex items-center gap-2">
+
+        <select id="accent-select" onchange="changeAccent(this.value)"
+
+          class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1">
+
+          <option value="en-US">🇺🇸 US</option>
+
+          <option value="en-GB">🇬🇧 UK</option>
+
+          <option value="en-AU">🇦🇺 AU</option>
+
+        </select>
+
+        <button id="profile-btn" onclick="toggleProfile()"
+
+          class="text-xs font-semibold px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+
+          My Learning
+
+        </button>
+
+        <span id="streak-badge"
+
+          class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">
+
+          🔥 0 Streak
+
+        </span>
+
       </div>
+
     </div>
-  </header>
 
-  <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col">
-    <!-- STUDY TAB -->
-    <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
-      <div class="w-full mb-6 bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
-          <span class="text-xs font-bold text-indigo-400" id="daily-progress-text">0 / 30 Completed</span>
-        </div>
-        <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-          <div id="daily-progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-        </div>
-        <div class="flex justify-end pt-0.5">
-          <button onclick="toggleShuffle()" id="shuffle-btn" class="text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5">
-            <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF
-          </button>
-        </div>
+    <div class="flex items-center justify-between border-t border-slate-800/80 pt-2">
+
+      <div class="flex items-center gap-1.5">
+
+        <button id="tab-study-btn" onclick="switchTab('study')"
+
+          class="px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600 text-white">Study</button>
+
+        <button id="tab-stats-btn" onclick="switchTab('stats')"
+
+          class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300">Dash</button>
+
+        <button id="tab-library-btn" onclick="switchTab('library')"
+
+          class="px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-slate-800 text-slate-300">Library</button>
+
       </div>
 
-      <div id="card-container" class="w-full aspect-[4/3] min-h-[320px] perspective-1000 cursor-pointer mb-6 group" onclick="flipCard()">
-        <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800 flex flex-col justify-between p-5">
-          
-          <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-6 bg-slate-800 rounded-2xl">
+      <div class="flex items-center gap-1.5">
+
+        <button onclick="exportData()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400"
+
+          title="Export Backup">
+
+          <i data-lucide="upload" class="w-4 h-4"></i>
+
+        </button>
+
+        <button onclick="openImportModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400"
+
+          title="Import Data">
+
+          <i data-lucide="download" class="w-4 h-4"></i>
+
+        </button>
+
+        <button onclick="openAddModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400"
+
+          title="Add New Chunk">
+
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+
+        </button>
+
+        <button onclick="resetLearningProgress()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-red-400"
+
+          title="Reset Learning Progress">
+
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</header>
+
+<main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col">
+
+  <!-- STUDY -->
+
+  <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
+
+    <div class="w-full mb-6 bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
+
+      <div class="flex justify-between items-center">
+
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
+
+        <span class="text-xs font-bold text-indigo-400" id="daily-progress-text">0 / 10 Completed</span>
+
+      </div>
+
+      <div class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+
+        <div id="daily-progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width:0%"></div>
+
+      </div>
+
+      <div class="flex justify-between items-center pt-0.5">
+
+        <span id="due-count" class="text-[11px] text-slate-400">0 cards due</span>
+
+        <button onclick="toggleShuffle()" id="shuffle-btn"
+
+          class="text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5">
+
+          <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <div id="card-container"
+
+      class="w-full aspect-[4/3] min-h-[320px] perspective-1000 cursor-pointer mb-6 group"
+
+      onclick="flipCard()">
+
+      <div id="card-inner"
+
+        class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800">
+
+        <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-6 bg-slate-800 rounded-2xl">
+
+          <div class="flex justify-between items-center">
+
+            <span id="card-status-badge"
+
+              class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300">New Chunk</span>
+
+            <button onclick="event.stopPropagation(); speakCurrent('chunk')"
+
+              class="p-2 rounded-full hover:bg-slate-700 text-slate-300">
+
+              <i data-lucide="volume-2" class="w-6 h-6"></i>
+
+            </button>
+
+          </div>
+
+          <div class="text-center my-auto">
+
+            <h2 id="card-chunk" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">--</h2>
+
+            <p id="card-hint" class="text-xs text-slate-500 mt-4">(Tap card to flip)</p>
+
+          </div>
+
+          <div class="text-center text-xs text-slate-400">FRONT</div>
+
+        </div>
+
+        <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-5 bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-y-auto">
+
+          <div class="space-y-1 border-b border-slate-700/80 pb-3">
+
             <div class="flex justify-between items-center">
-              <span id="card-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300">New Chunk</span>
-              <button onclick="event.stopPropagation(); speakText(currentCard.chunk)" class="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">
-                <i data-lucide="volume-2" class="w-6 h-6"></i>
+
+              <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Simple Meaning</span>
+
+              <button onclick="event.stopPropagation(); speakCurrent('meaning')"
+
+                class="p-1.5 rounded-full hover:bg-slate-700 text-emerald-400">
+
+                <i data-lucide="volume-2" class="w-4 h-4"></i>
+
               </button>
+
             </div>
-            <div class="text-center my-auto">
-              <h2 id="card-chunk" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">--</h2>
-              <p class="text-xs text-slate-500 mt-4">(Tap card to flip)</p>
-            </div>
-            <div class="text-center text-xs text-slate-400">FRONT</div>
+
+            <p id="card-meaning" class="text-base font-bold text-emerald-400">--</p>
+
           </div>
 
-          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-5 bg-slate-800 border border-indigo-500/30 rounded-2xl overflow-y-auto">
-            <div class="space-y-1 border-b border-slate-700/80 pb-3">
-              <div class="flex justify-between items-center">
-                <span class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">Simple Meaning</span>
-                <button onclick="event.stopPropagation(); speakText(currentCard.meaning)" class="p-1.5 rounded-full hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 transition" title="Pronounce Meaning">
-                  <i data-lucide="volume-2" class="w-4 h-4"></i>
+          <div class="space-y-2 my-auto">
+
+            <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50">
+
+              <div class="flex justify-between items-center mb-0.5">
+
+                <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 1</span>
+
+                <button onclick="event.stopPropagation(); speakCurrent('example1')" class="p-1 rounded hover:bg-slate-800">
+
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+
                 </button>
+
               </div>
-              <p id="card-meaning" class="text-base font-bold text-emerald-400">--</p>
+
+              <p id="card-example1" class="text-xs md:text-sm text-slate-200 italic">--</p>
+
             </div>
 
-            <div class="space-y-2 my-auto">
-              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
-                <div class="flex justify-between items-center mb-0.5">
-                  <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 1</span>
-                  <button onclick="event.stopPropagation(); speakText(currentCard.example1)" class="p-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition" title="Pronounce Example 1">
-                    <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-                <p id="card-example1" class="text-xs md:text-sm text-slate-200 italic">"--"</p>
+            <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50">
+
+              <div class="flex justify-between items-center mb-0.5">
+
+                <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 2</span>
+
+                <button onclick="event.stopPropagation(); speakCurrent('example2')" class="p-1 rounded hover:bg-slate-800">
+
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+
+                </button>
+
               </div>
 
-              <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 relative group">
-                <div class="flex justify-between items-center mb-0.5">
-                  <span class="text-[10px] text-slate-400 font-semibold">EXAMPLE 2</span>
-                  <button onclick="event.stopPropagation(); speakText(currentCard.example2)" class="p-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition" title="Pronounce Example 2">
-                    <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-                <p id="card-example2" class="text-xs md:text-sm text-slate-200 italic">"--"</p>
-              </div>
+              <p id="card-example2" class="text-xs md:text-sm text-slate-200 italic">--</p>
+
             </div>
 
-            <div class="text-center text-[10px] text-slate-500 border-t border-slate-700/60 pt-1">BACK</div>
           </div>
 
+          <div class="text-center text-[10px] text-slate-500 border-t border-slate-700/60 pt-1">BACK</div>
+
         </div>
+
       </div>
 
-      <div id="srs-controls" class="w-full grid grid-cols-3 gap-3 opacity-50 pointer-events-none transition-all duration-300">
-        <button onclick="processSRS('hard')" class="flex flex-col items-center py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 rounded-xl transition">
-          <span class="font-bold text-sm">Hard</span>
-          <span class="text-[10px] text-red-400/80">Forgot / 1d</span>
-        </button>
-        <button onclick="processSRS('good')" class="flex flex-col items-center py-3 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 text-amber-300 rounded-xl transition">
-          <span class="font-bold text-sm">Good</span>
-          <span class="text-[10px] text-amber-400/80">Review / 3d</span>
-        </button>
-        <button onclick="processSRS('easy')" class="flex flex-col items-center py-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 rounded-xl transition">
-          <span class="font-bold text-sm">Easy</span>
-          <span class="text-[10px] text-emerald-400/80">Mastered / 14d</span>
-        </button>
-      </div>
     </div>
 
-    <!-- DASHBOARD TAB -->
-    <div id="tab-stats" class="hidden space-y-6">
-      <h2 class="text-xl font-bold text-white mb-4">Mastery Dashboard</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-          <p class="text-xs font-medium text-slate-400">Total Chunks</p>
-          <p id="stat-total" class="text-2xl font-black text-white mt-1">0</p>
-        </div>
-        <div class="bg-slate-800 p-4 rounded-xl border border-emerald-900/50">
-          <p class="text-xs font-medium text-emerald-400">🟢 Mastered</p>
-          <p id="stat-mastered" class="text-2xl font-black text-emerald-400 mt-1">0</p>
-        </div>
-        <div class="bg-slate-800 p-4 rounded-xl border border-amber-900/50">
-          <p class="text-xs font-medium text-amber-400">🟡 Learning</p>
-          <p id="stat-learning" class="text-2xl font-black text-amber-400 mt-1">0</p>
-        </div>
-        <div class="bg-slate-800 p-4 rounded-xl border border-red-900/50">
-          <p class="text-xs font-medium text-red-400">🔴 Struggling</p>
-          <p id="stat-struggling" class="text-2xl font-black text-red-400 mt-1">0</p>
-        </div>
-      </div>
-      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3">
-        <h3 class="text-sm font-semibold text-slate-300">Proficiency Breakdown</h3>
-        <div id="breakdown-bar" class="w-full h-4 bg-slate-700 rounded-full overflow-hidden flex">
-          <div id="bar-mastered" class="bg-emerald-500 h-full" style="width: 0%"></div>
-          <div id="bar-learning" class="bg-amber-500 h-full" style="width: 0%"></div>
-          <div id="bar-struggling" class="bg-red-500 h-full" style="width: 0%"></div>
-        </div>
-      </div>
+    <div id="srs-controls" class="w-full grid grid-cols-3 gap-3 opacity-50 pointer-events-none">
+
+      <button id="hard-btn" onclick="processSRS('hard')"
+
+        class="flex flex-col items-center py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 rounded-xl">
+
+        <span class="font-bold text-sm">Hard</span>
+
+        <span class="text-[10px] text-red-400/80">Again · 20 min</span>
+
+      </button>
+
+      <button id="good-btn" onclick="processSRS('good')"
+
+        class="flex flex-col items-center py-3 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 text-amber-300 rounded-xl">
+
+        <span class="font-bold text-sm">Good</span>
+
+        <span class="text-[10px] text-amber-400/80">Next interval</span>
+
+      </button>
+
+      <button id="easy-btn" onclick="processSRS('easy')"
+
+        class="flex flex-col items-center py-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 rounded-xl">
+
+        <span class="font-bold text-sm">Easy</span>
+
+        <span class="text-[10px] text-emerald-400/80">Skip one stage</span>
+
+      </button>
+
     </div>
 
-    <!-- LIBRARY TAB -->
-    <div id="tab-library" class="hidden space-y-4">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-3">
-        <h2 class="text-xl font-bold text-white w-full md:w-auto">Chunk Library</h2>
-        <div class="flex items-center gap-2 w-full md:w-auto">
-          <div class="relative flex-1 md:w-60">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="library-search" oninput="renderLibrary()" placeholder="Search chunks..." class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-indigo-500">
-          </div>
-          <select id="library-filter" onchange="renderLibrary()" class="bg-slate-800 text-slate-200 border border-slate-700 text-sm rounded-lg p-2">
-            <option value="all">All</option>
-            <option value="mastered">🟢 Mastered</option>
-            <option value="learning">🟡 Learning</option>
-            <option value="struggling">🔴 Struggling</option>
-          </select>
-        </div>
-      </div>
-      <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-    </div>
-  </main>
+    <p class="text-[11px] text-slate-500 mt-4 text-center">
 
-  <!-- Add / Edit Modal -->
-  <div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-      <h3 id="modal-title" class="text-lg font-bold text-white">Add New Chunk</h3>
-      <form onsubmit="handleSaveChunk(event)" class="space-y-3">
-        <input type="hidden" id="input-id">
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">CHUNK / EXPRESSION</label>
-          <input type="text" id="input-chunk" required placeholder="e.g., be subject to" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">SIMPLE ENGLISH MEANING</label>
-          <input type="text" id="input-meaning" required placeholder="e.g., likely to change depending on" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 1</label>
-          <textarea id="input-example1" required rows="2" placeholder="e.g., Schedules are subject to change." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 2</label>
-          <textarea id="input-example2" required rows="2" placeholder="e.g., Prices are subject to approval." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300 hover:bg-slate-600">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Save Chunk</button>
-        </div>
-      </form>
-    </div>
+      Hard = review again in 20 minutes. Good = next stage. Easy = skip one stage.
+
+    </p>
+
   </div>
 
-  <!-- Import Modal -->
-  <div id="import-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
-      <h3 class="text-lg font-bold text-white">Import Backup Data</h3>
-      <p class="text-xs text-slate-400">Paste your backup code string below to restore/sync your chunks:</p>
-      <textarea id="import-input" rows="5" placeholder="Paste your exported code string here..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"></textarea>
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="closeImportModal()" class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300 hover:bg-slate-600">Cancel</button>
-        <button type="button" onclick="handleImportData()" class="px-4 py-2 rounded-lg text-sm bg-amber-600 text-white font-semibold hover:bg-amber-500">Import & Sync</button>
+  <!-- DASHBOARD -->
+
+  <div id="tab-stats" class="hidden space-y-6">
+
+    <h2 class="text-xl font-bold text-white mb-4">Mastery Dashboard</h2>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+
+        <p class="text-xs font-medium text-slate-400">Total Chunks</p>
+
+        <p id="stat-total" class="text-2xl font-black text-white mt-1">0</p>
+
       </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-emerald-900/50">
+
+        <p class="text-xs font-medium text-emerald-400">🟢 Mastered</p>
+
+        <p id="stat-mastered" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+
+      </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-amber-900/50">
+
+        <p class="text-xs font-medium text-amber-400">🟡 Learning</p>
+
+        <p id="stat-learning" class="text-2xl font-black text-amber-400 mt-1">0</p>
+
+      </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-red-900/50">
+
+        <p class="text-xs font-medium text-red-400">🔴 Struggling</p>
+
+        <p id="stat-struggling" class="text-2xl font-black text-red-400 mt-1">0</p>
+
+      </div>
+
     </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3">
+
+      <h3 class="text-sm font-semibold text-slate-300">Proficiency Breakdown</h3>
+
+      <div class="w-full h-4 bg-slate-700 rounded-full overflow-hidden flex">
+
+        <div id="bar-mastered" class="bg-emerald-500 h-full" style="width:0%"></div>
+
+        <div id="bar-learning" class="bg-amber-500 h-full" style="width:0%"></div>
+
+        <div id="bar-struggling" class="bg-red-500 h-full" style="width:0%"></div>
+
+      </div>
+
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-2">
+
+      <h3 class="text-sm font-semibold text-slate-300">Learning Progress</h3>
+
+      <p id="stats-due" class="text-sm text-slate-400">Cards due: 0</p>
+
+      <p id="stats-reviewed" class="text-sm text-slate-400">Total reviews: 0</p>
+
+    </div>
+
   </div>
 
-  <script>
-    const starterChunks = [
-      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example1: 'Flight schedules are subject to change due to poor weather.', example2: 'The proposed plan is subject to final review.', status: 'struggling', interval: 1 },
-      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example1: 'All staff must comply with safety regulations in the lab.', example2: 'Failure to comply with policies may result in penalties.', status: 'learning', interval: 3 },
-      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example1: 'You can always turn to the IT department for tech support.', example2: 'She turned to her manager for career guidance.', status: 'struggling', interval: 1 },
-      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example1: 'The team is currently working on a new marketing campaign.', example2: 'Engineers are working on fixing the system bug.', status: 'learning', interval: 3 },
-      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example1: 'The incorporation of AI tools significantly increased output.', example2: 'The incorporation of feedback improved the product.', status: 'mastered', interval: 14 }
-    ];
+  <!-- LIBRARY -->
 
-    let chunks = [];
-    let studyQueue = [];
-    let currentQueueIndex = 0;
-    let isFlipped = false;
-    let isShuffleOn = false;
-    let dailyCompletedCount = 0;
-    let streakCount = 0;
-    let currentAccent = 'en-US';
-    let availableVoices = [];
+  <div id="tab-library" class="hidden space-y-4">
 
-    function initApp() {
-      currentAccent = localStorage.getItem('toeic_accent') || 'en-AU'; // 預設或抓取
-      document.getElementById('accent-select').value = currentAccent;
+    <div class="flex flex-col md:flex-row justify-between items-center gap-3">
 
-      // 載入系統語音清單（瀏覽器需要時間非同步載入）
-      if ('speechSynthesis' in window) {
-        loadVoices();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+      <h2 class="text-xl font-bold text-white w-full md:w-auto">Chunk Library</h2>
+
+      <div class="flex items-center gap-2 w-full md:w-auto">
+
+        <div class="relative flex-1 md:w-60">
+
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+
+          <input type="text" id="library-search" oninput="renderLibrary()" placeholder="Search chunks..."
+
+            class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-sm rounded-lg pl-9 pr-3 py-2">
+
+        </div>
+
+        <select id="library-filter" onchange="renderLibrary()"
+
+          class="bg-slate-800 text-slate-200 border border-slate-700 text-sm rounded-lg p-2">
+
+          <option value="all">All</option>
+
+          <option value="mastered">🟢 Mastered</option>
+
+          <option value="learning">🟡 Learning</option>
+
+          <option value="struggling">🔴 Struggling</option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+    <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+  </div>
+
+</main>
+
+<!-- ADD / EDIT MODAL -->
+
+<div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+
+    <h3 id="modal-title" class="text-lg font-bold text-white">Add New Chunk</h3>
+
+    <form onsubmit="handleSaveChunk(event)" class="space-y-3">
+
+      <input type="hidden" id="input-id">
+
+      <div>
+
+        <label class="block text-xs font-semibold text-slate-400 mb-1">CHUNK / EXPRESSION</label>
+
+        <input type="text" id="input-chunk" required placeholder="e.g., be subject to"
+
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+
+      </div>
+
+      <div>
+
+        <label class="block text-xs font-semibold text-slate-400 mb-1">SIMPLE ENGLISH MEANING</label>
+
+        <input type="text" id="input-meaning" required placeholder="e.g., likely to change depending on"
+
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+
+      </div>
+
+      <div>
+
+        <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 1</label>
+
+        <textarea id="input-example1" required rows="2"
+
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white"></textarea>
+
+      </div>
+
+      <div>
+
+        <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE 2</label>
+
+        <textarea id="input-example2" required rows="2"
+
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white"></textarea>
+
+      </div>
+
+      <p id="edit-note" class="hidden text-xs text-amber-300">
+
+        Changing the Chunk expression itself will reset that card's learning progress.
+
+      </p>
+
+      <div class="flex justify-end gap-2 pt-2">
+
+        <button type="button" onclick="closeAddModal()"
+
+          class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300">Cancel</button>
+
+        <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white font-semibold">Save Chunk</button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<!-- IMPORT MODAL -->
+
+<div id="import-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+
+    <h3 class="text-lg font-bold text-white">Import Chunk Data</h3>
+
+    <p class="text-xs text-slate-400">Paste a JSON backup or a JSON array of Chunk objects.</p>
+
+    <label class="block text-xs font-semibold text-slate-400">IMPORT MODE</label>
+
+    <select id="import-mode" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+
+      <option value="merge">Merge: keep existing progress</option>
+
+      <option value="replace-preserve">Replace content: preserve matching progress</option>
+
+      <option value="replace-reset">Replace all and reset learning progress</option>
+
+    </select>
+
+    <p class="text-xs text-slate-500">
+
+      Merge adds new Chunks and updates matching content. Existing progress is kept.
+
+      Replace modes remove Chunks that are not in the imported file.
+
+    </p>
+
+    <textarea id="import-input" rows="7" placeholder="Paste JSON here..."
+
+      class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono"></textarea>
+
+    <div class="flex justify-end gap-2">
+
+      <button type="button" onclick="closeImportModal()"
+
+        class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300">Cancel</button>
+
+      <button type="button" onclick="handleImportData()"
+
+        class="px-4 py-2 rounded-lg text-sm bg-amber-600 text-white font-semibold">Import</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- EXPORT MODAL -->
+
+<div id="export-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+
+    <h3 class="text-lg font-bold text-white">Export JSON Backup</h3>
+
+    <label class="block text-xs font-semibold text-slate-400">WHAT TO EXPORT</label>
+
+    <select id="export-mode" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+
+      <option value="content">Chunk content only</option>
+
+      <option value="full">Chunk content + learning progress + streak</option>
+
+    </select>
+
+    <p class="text-xs text-slate-400">
+
+      Content-only files are useful for sharing Chunks. Full backups can restore learning progress on another device.
+
+    </p>
+
+    <div class="flex justify-end gap-2">
+
+      <button onclick="closeExportModal()" class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300">Cancel</button>
+
+      <button onclick="performExport()" class="px-4 py-2 rounded-lg text-sm bg-emerald-600 text-white font-semibold">Copy JSON</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  const DAILY_GOAL = 10;
+
+  const INTERVALS = [
+
+    { label: '20 minutes', ms: 20 * 60 * 1000 },
+
+    { label: '1 hour', ms: 60 * 60 * 1000 },
+
+    { label: '1 day', ms: 24 * 60 * 60 * 1000 },
+
+    { label: '3 days', ms: 3 * 24 * 60 * 60 * 1000 },
+
+    { label: '1 week', ms: 7 * 24 * 60 * 60 * 1000 },
+
+    { label: '2 weeks', ms: 14 * 24 * 60 * 60 * 1000 },
+
+    { label: '1 month', ms: 30 * 24 * 60 * 60 * 1000 }
+
+  ];
+
+  const starterChunks = [
+
+    { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example1: 'Flight schedules are subject to change due to poor weather.', example2: 'The proposed plan is subject to final review.', status: 'struggling' },
+
+    { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example1: 'All staff must comply with safety regulations in the lab.', example2: 'Failure to comply with policies may result in penalties.', status: 'learning' },
+
+    { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example1: 'You can always turn to the IT department for tech support.', example2: 'She turned to her manager for career guidance.', status: 'struggling' },
+
+    { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example1: 'The team is currently working on a new marketing campaign.', example2: 'Engineers are working on fixing the system bug.', status: 'learning' },
+
+    { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example1: 'The incorporation of AI tools significantly increased output.', example2: 'The incorporation of feedback improved the product.', status: 'mastered' }
+
+  ];
+
+  let chunks = [];
+
+  let studyQueue = [];
+
+  let currentCard = null;
+
+  let isFlipped = false;
+
+  let isShuffleOn = false;
+
+  let dailyCompletedCount = 0;
+
+  let streakCount = 0;
+
+  let currentAccent = 'en-US';
+
+  let availableVoices = [];
+
+  let activeProfile = 'main';
+
+  let hasReachedGoalToday = false;
+
+  function storageKey(base) {
+
+    return `${base}_${activeProfile}`;
+
+  }
+
+  function getStored(base) {
+
+    const current = localStorage.getItem(storageKey(base));
+
+    if (current !== null) return current;
+
+    // Migrate older data into the main profile without losing it.
+
+    if (activeProfile === 'main') {
+
+      const legacy = localStorage.getItem(base);
+
+      if (legacy !== null) {
+
+        localStorage.setItem(storageKey(base), legacy);
+
+        return legacy;
+
       }
 
-      const savedChunks = localStorage.getItem('toeic_chunks');
-      if (savedChunks) {
-        chunks = JSON.parse(savedChunks);
-        chunks.forEach(c => {
-          if (!c.example1 && c.example) c.example1 = c.example;
-          if (!c.example2) c.example2 = c.example1 || '';
-        });
+    }
+
+    return null;
+
+  }
+
+  function setStored(base, value) {
+
+    localStorage.setItem(storageKey(base), value);
+
+    // Keep the original keys working for the main profile.
+
+    if (activeProfile === 'main') {
+
+      localStorage.setItem(base, value);
+
+    }
+
+  }
+
+  function makeId() {
+
+    return 'chunk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+
+  }
+
+  function cleanStatus(status) {
+
+    return ['mastered', 'learning', 'struggling'].includes(status) ? status : 'struggling';
+
+  }
+
+  function normalizeChunk(raw, resetProgress = false) {
+
+    const c = raw && typeof raw === 'object' ? raw : {};
+
+    const legacyExample = typeof c.example === 'string' ? c.example : '';
+
+    const result = {
+
+      id: String(c.id || makeId()),
+
+      chunk: String(c.chunk || '').trim(),
+
+      meaning: String(c.meaning || '').trim(),
+
+      example1: String(c.example1 || legacyExample || '').trim(),
+
+      example2: String(c.example2 || legacyExample || c.example1 || '').trim(),
+
+      status: cleanStatus(c.status)
+
+    };
+
+    if (resetProgress) {
+
+      return {
+
+        ...result,
+
+        status: 'struggling',
+
+        srsStage: -1,
+
+        nextReview: 0,
+
+        interval: 0,
+
+        reviewCount: 0,
+
+        lastReviewed: null
+
+      };
+
+    }
+
+    const stage = Number.isInteger(c.srsStage) && c.srsStage >= -1 && c.srsStage < INTERVALS.length
+
+      ? c.srsStage
+
+      : -1;
+
+    return {
+
+      ...result,
+
+      srsStage: stage,
+
+      nextReview: Number.isFinite(Number(c.nextReview)) ? Number(c.nextReview) : 0,
+
+      interval: Number.isFinite(Number(c.interval)) ? Number(c.interval) : 0,
+
+      reviewCount: Math.max(0, Number(c.reviewCount) || 0),
+
+      lastReviewed: c.lastReviewed || null
+
+    };
+
+  }
+
+  function hasProgressData(c) {
+
+    return c && (
+
+      Number.isFinite(Number(c.nextReview)) && Number(c.nextReview) > 0 ||
+
+      Number.isInteger(c.srsStage) ||
+
+      Number(c.reviewCount) > 0 ||
+
+      c.lastReviewed
+
+    );
+
+  }
+
+  function initApp() {
+
+    currentAccent = localStorage.getItem('toeic_accent') || 'en-AU';
+
+    document.getElementById('accent-select').value = currentAccent;
+
+    if ('speechSynthesis' in window) {
+
+      loadVoices();
+
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    }
+
+    const storedProfile = localStorage.getItem('toeic_active_profile');
+
+    if (storedProfile === 'guest') activeProfile = 'guest';
+
+    loadProfile();
+
+    checkAndUpdateStreak();
+
+    updateProfileButton();
+
+    updateDashboard();
+
+    rebuildQueue();
+
+    loadCard();
+
+    lucide.createIcons();
+
+    // Refresh the study screen when a card becomes due while the page stays open.
+
+    setInterval(() => {
+
+      if (!currentCard) {
+
+        rebuildQueue();
+
+        loadCard();
+
+      }
+
+    }, 30000);
+
+  }
+
+  function loadProfile() {
+
+    const saved = getStored('toeic_chunks');
+
+    if (saved) {
+
+      try {
+
+        const parsed = JSON.parse(saved);
+
+        chunks = Array.isArray(parsed) ? parsed.map(c => normalizeChunk(c)) : [];
+
+      } catch {
+
+        chunks = starterChunks.map(c => normalizeChunk(c, true));
+
+      }
+
+    } else {
+
+      chunks = starterChunks.map(c => normalizeChunk(c, true));
+
+      saveData();
+
+    }
+
+    const today = new Date().toDateString();
+
+    if (!getStored('toeic_last_date')) {
+
+      setStored('toeic_last_date', today);
+
+      setStored('toeic_daily_count', '0');
+
+      setStored('toeic_streak', getStored('toeic_streak') || '0');
+
+    }
+
+    checkAndUpdateStreak();
+
+    rebuildQueue();
+
+    loadCard();
+
+    updateDashboard();
+
+    renderLibrary();
+
+    updateProfileButton();
+
+  }
+
+  function loadVoices() {
+
+    if ('speechSynthesis' in window) {
+
+      availableVoices = window.speechSynthesis.getVoices();
+
+    }
+
+  }
+
+  function changeAccent(accent) {
+
+    currentAccent = accent;
+
+    localStorage.setItem('toeic_accent', accent);
+
+  }
+
+  function toggleProfile() {
+
+    const target = activeProfile === 'main' ? 'guest' : 'main';
+
+    if (!confirm(
+
+      target === 'guest'
+
+        ? 'Switch to Guest Mode? Guest progress is stored separately from your main learning progress.'
+
+        : 'Switch back to My Learning? Your main progress will be restored.'
+
+    )) return;
+
+    saveData();
+
+    activeProfile = target;
+
+    localStorage.setItem('toeic_active_profile', activeProfile);
+
+    loadProfile();
+
+    updateProfileButton();
+
+    alert(activeProfile === 'guest'
+
+      ? 'Guest Mode is active. Your main learning progress is unchanged.'
+
+      : 'Your main learning progress has been restored.');
+
+  }
+
+  function updateProfileButton() {
+
+    const btn = document.getElementById('profile-btn');
+
+    if (!btn) return;
+
+    if (activeProfile === 'guest') {
+
+      btn.innerText = 'Guest Mode';
+
+      btn.className = 'text-xs font-semibold px-2 py-1 rounded-lg bg-amber-900/60 border border-amber-700 text-amber-200';
+
+    } else {
+
+      btn.innerText = 'My Learning';
+
+      btn.className = 'text-xs font-semibold px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300';
+
+    }
+
+  }
+
+  function checkAndUpdateStreak() {
+
+    const today = new Date().toDateString();
+
+    const savedDate = getStored('toeic_last_date');
+
+    const savedStreak = parseInt(getStored('toeic_streak') || '0', 10);
+
+    const savedCount = parseInt(getStored('toeic_daily_count') || '0', 10);
+
+    if (savedDate === today) {
+
+      streakCount = savedStreak;
+
+      dailyCompletedCount = Math.min(DAILY_GOAL, savedCount);
+
+    } else {
+
+      const yesterday = new Date();
+
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      // The streak was already incremented when the goal was reached.
+
+      // Preserve it if yesterday was a completed day; otherwise reset it.
+
+      if (savedDate === yesterday.toDateString() && savedCount >= DAILY_GOAL) {
+
+        streakCount = savedStreak;
+
+      } else if (savedDate) {
+
+        streakCount = 0;
+
       } else {
-        chunks = starterChunks;
-        saveData();
+
+        streakCount = savedStreak;
+
       }
+
+      dailyCompletedCount = 0;
+
+      setStored('toeic_last_date', today);
+
+      setStored('toeic_daily_count', '0');
+
+      setStored('toeic_streak', String(streakCount));
+
+    }
+
+    hasReachedGoalToday = dailyCompletedCount >= DAILY_GOAL;
+
+    updateProgressUI();
+
+  }
+
+  function recordDailyActivity() {
+
+    const today = new Date().toDateString();
+
+    if (getStored('toeic_last_date') !== today) {
 
       checkAndUpdateStreak();
-      initStudyQueue();
-      lucide.createIcons();
-      updateDashboard();
-      loadCard();
+
     }
 
-    function loadVoices() {
-      if ('speechSynthesis' in window) {
-        availableVoices = window.speechSynthesis.getVoices();
+    if (dailyCompletedCount < DAILY_GOAL) {
+
+      dailyCompletedCount++;
+
+      if (dailyCompletedCount >= DAILY_GOAL && !hasReachedGoalToday) {
+
+        streakCount++;
+
+        hasReachedGoalToday = true;
+
+        setStored('toeic_streak', String(streakCount));
+
       }
+
     }
 
-    function changeAccent(accent) {
-      currentAccent = accent;
-      localStorage.setItem('toeic_accent', accent);
+    setStored('toeic_last_date', today);
+
+    setStored('toeic_daily_count', String(dailyCompletedCount));
+
+    updateProgressUI();
+
+  }
+
+  function updateProgressUI() {
+
+    const count = Math.min(DAILY_GOAL, dailyCompletedCount);
+
+    document.getElementById('daily-progress-text').innerText = `${count} / ${DAILY_GOAL} Completed`;
+
+    document.getElementById('daily-progress-bar').style.width = `${Math.min(100, count / DAILY_GOAL * 100)}%`;
+
+    document.getElementById('streak-badge').innerText = `🔥 ${streakCount} Streak`;
+
+  }
+
+  function saveData() {
+
+    setStored('toeic_chunks', JSON.stringify(chunks));
+
+    updateDashboard();
+
+    if (!document.getElementById('tab-library').classList.contains('hidden')) {
+
+      renderLibrary();
+
     }
 
-    function checkAndUpdateStreak() {
-      const todayStr = new Date().toDateString();
-      const savedDate = localStorage.getItem('toeic_last_date');
-      const savedStreak = parseInt(localStorage.getItem('toeic_streak') || '0');
-      const savedCount = parseInt(localStorage.getItem('toeic_daily_count') || '0');
+  }
 
-      if (savedDate === todayStr) {
-        streakCount = savedStreak;
-        dailyCompletedCount = savedCount;
-      } else {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        if (savedDate === yesterday.toDateString() && savedCount >= 30) {
-          streakCount = savedStreak + 1;
-        } else if (savedDate !== todayStr && savedCount < 30 && savedDate) {
-          streakCount = 0;
-        } else {
-          streakCount = savedStreak;
-        }
-        dailyCompletedCount = 0;
-        localStorage.setItem('toeic_last_date', todayStr);
-        localStorage.setItem('toeic_daily_count', '0');
-        localStorage.setItem('toeic_streak', streakCount.toString());
-      }
-      updateProgressUI();
+  function getDueChunks() {
+
+    const now = Date.now();
+
+    return chunks.filter(c => !c.nextReview || Number(c.nextReview) <= now);
+
+  }
+
+  function shuffleArray(arr) {
+
+    for (let i = arr.length - 1; i > 0; i--) {
+
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+
     }
 
-    function updateProgressUI() {
-      document.getElementById('daily-progress-text').innerText = `${dailyCompletedCount} / 30 Completed`;
-      document.getElementById('daily-progress-bar').style.width = `${Math.min(100, (dailyCompletedCount / 30) * 100)}%`;
-      document.getElementById('streak-badge').innerText = `🔥 ${streakCount} Streak`;
+    return arr;
+
+  }
+
+  function rebuildQueue() {
+
+    const due = getDueChunks();
+
+    if (isShuffleOn) shuffleArray(due);
+
+    studyQueue = due.map(c => c.id);
+
+    document.getElementById('due-count').innerText = `${due.length} card${due.length === 1 ? '' : 's'} due`;
+
+  }
+
+  function toggleShuffle() {
+
+    isShuffleOn = !isShuffleOn;
+
+    const btn = document.getElementById('shuffle-btn');
+
+    if (isShuffleOn) {
+
+      btn.className = 'text-xs px-2.5 py-1 rounded-lg bg-indigo-600 text-white flex items-center gap-1.5';
+
+      btn.innerHTML = '<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: ON';
+
+    } else {
+
+      btn.className = 'text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5';
+
+      btn.innerHTML = '<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF';
+
     }
 
-    function saveData() {
-      localStorage.setItem('toeic_chunks', JSON.stringify(chunks));
-      updateDashboard();
-      if (!document.getElementById('tab-library').classList.contains('hidden')) {
-        renderLibrary();
-      }
+    lucide.createIcons();
+
+    rebuildQueue();
+
+    loadCard();
+
+  }
+
+  function setControlsEnabled(enabled) {
+
+    const controls = document.getElementById('srs-controls');
+
+    controls.classList.toggle('opacity-50', !enabled);
+
+    controls.classList.toggle('pointer-events-none', !enabled);
+
+    ['hard-btn', 'good-btn', 'easy-btn'].forEach(id => {
+
+      document.getElementById(id).disabled = !enabled;
+
+    });
+
+  }
+
+  function loadCard() {
+
+    isFlipped = false;
+
+    document.getElementById('card-inner').classList.remove('rotate-y-180');
+
+    const controls = document.getElementById('srs-controls');
+
+    controls.classList.add('opacity-50', 'pointer-events-none');
+
+    const id = studyQueue.length ? studyQueue[0] : null;
+
+    currentCard = id ? chunks.find(c => c.id === id) || null : null;
+
+    if (!currentCard) {
+
+      document.getElementById('card-chunk').innerText = chunks.length ? 'All done for now 🎉' : 'No Chunks Yet';
+
+      document.getElementById('card-meaning').innerText = chunks.length
+
+        ? 'You have finished all cards that are due. Come back later for your next review.'
+
+        : 'Add a Chunk or import your JSON data to get started.';
+
+      document.getElementById('card-example1').innerText = '';
+
+      document.getElementById('card-example2').innerText = '';
+
+      document.getElementById('card-status-badge').innerText = chunks.length ? 'Completed' : 'Empty Library';
+
+      document.getElementById('card-hint').innerText = chunks.length ? 'Your next cards will appear when they are due.' : 'Use the + button to add a Chunk.';
+
+      setControlsEnabled(false);
+
+      return;
+
     }
 
-    function initStudyQueue() {
-      studyQueue = chunks.map((_, index) => index);
-      if (isShuffleOn) {
-        for (let i = studyQueue.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [studyQueue[i], studyQueue[j]] = [studyQueue[j], studyQueue[i]];
-        }
-      }
-      currentQueueIndex = 0;
+    document.getElementById('card-chunk').innerText = currentCard.chunk;
+
+    document.getElementById('card-meaning').innerText = currentCard.meaning;
+
+    document.getElementById('card-example1').innerText = currentCard.example1 ? `"${currentCard.example1}"` : '';
+
+    document.getElementById('card-example2').innerText = currentCard.example2 ? `"${currentCard.example2}"` : '';
+
+    document.getElementById('card-hint').innerText = '(Tap card to flip)';
+
+    const badge = document.getElementById('card-status-badge');
+
+    badge.innerText = currentCard.status.toUpperCase();
+
+    if (currentCard.status === 'mastered') {
+
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800';
+
+    } else if (currentCard.status === 'learning') {
+
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-300 border border-amber-800';
+
+    } else {
+
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950 text-red-300 border border-red-800';
+
     }
 
-    function toggleShuffle() {
-      isShuffleOn = !isShuffleOn;
-      const btn = document.getElementById('shuffle-btn');
-      if (isShuffleOn) {
-        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition flex items-center gap-1.5 shadow-sm";
-        btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: ON`;
-      } else {
-        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5";
-        btn.innerHTML = `<i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Shuffle: OFF`;
-      }
-      lucide.createIcons();
-      initStudyQueue();
-      loadCard();
+    setControlsEnabled(false);
+
+    lucide.createIcons();
+
+  }
+
+  function flipCard() {
+
+    if (!currentCard) return;
+
+    isFlipped = !isFlipped;
+
+    document.getElementById('card-inner').classList.toggle('rotate-y-180', isFlipped);
+
+    const controls = document.getElementById('srs-controls');
+
+    controls.classList.toggle('opacity-50', !isFlipped);
+
+    controls.classList.toggle('pointer-events-none', !isFlipped);
+
+    ['hard-btn', 'good-btn', 'easy-btn'].forEach(id => {
+
+      document.getElementById(id).disabled = !isFlipped;
+
+    });
+
+  }
+
+  function processSRS(type) {
+
+    if (!currentCard || !isFlipped) return;
+
+    const now = Date.now();
+
+    const oldStage = Number.isInteger(currentCard.srsStage) ? currentCard.srsStage : -1;
+
+    let newStage = oldStage;
+
+    if (type === 'hard') {
+
+      currentCard.status = 'struggling';
+
+      newStage = 0;
+
+    } else if (type === 'good') {
+
+      currentCard.status = oldStage >= 2 ? 'mastered' : 'learning';
+
+      newStage = Math.min(INTERVALS.length - 1, oldStage + 1);
+
+    } else if (type === 'easy') {
+
+      currentCard.status = 'mastered';
+
+      newStage = Math.min(INTERVALS.length - 1, oldStage + 2);
+
+    } else {
+
+      return;
+
     }
 
-    let currentCard = null;
-    function loadCard() {
-      if (chunks.length === 0) return;
-      if (currentQueueIndex >= studyQueue.length) {
-        initStudyQueue();
-      }
-      
-      const realIndex = studyQueue[currentQueueIndex];
-      currentCard = chunks[realIndex];
-      
-      document.getElementById('card-chunk').innerText = currentCard.chunk;
-      document.getElementById('card-meaning').innerText = currentCard.meaning;
-      document.getElementById('card-example1').innerText = `"${currentCard.example1 || ''}"`;
-      document.getElementById('card-example2').innerText = `"${currentCard.example2 || ''}"`;
-      
-      const badge = document.getElementById('card-status-badge');
-      badge.innerText = currentCard.status.toUpperCase();
-      if (currentCard.status === 'mastered') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800";
-      else if (currentCard.status === 'learning') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-300 border border-amber-800";
-      else badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950 text-red-300 border border-red-800";
+    newStage = Math.max(0, newStage);
 
-      if (isFlipped) flipCard();
+    const interval = INTERVALS[newStage];
+
+    currentCard.srsStage = newStage;
+
+    currentCard.interval = interval.ms;
+
+    currentCard.nextReview = now + interval.ms;
+
+    currentCard.reviewCount = (Number(currentCard.reviewCount) || 0) + 1;
+
+    currentCard.lastReviewed = now;
+
+    recordDailyActivity();
+
+    saveData();
+
+    rebuildQueue();
+
+    loadCard();
+
+  }
+
+  function switchTab(tab) {
+
+    ['study', 'stats', 'library'].forEach(t => {
+
+      document.getElementById(`tab-${t}`).classList.add('hidden');
+
+      const btn = document.getElementById(`tab-${t}-btn`);
+
+      btn.classList.remove('bg-indigo-600', 'text-white');
+
+      btn.classList.add('hover:bg-slate-800', 'text-slate-300');
+
+    });
+
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+
+    const activeBtn = document.getElementById(`tab-${tab}-btn`);
+
+    activeBtn.classList.add('bg-indigo-600', 'text-white');
+
+    activeBtn.classList.remove('hover:bg-slate-800', 'text-slate-300');
+
+    if (tab === 'library') renderLibrary();
+
+    if (tab === 'stats') updateDashboard();
+
+  }
+
+  function updateDashboard() {
+
+    const total = chunks.length;
+
+    const mastered = chunks.filter(c => c.status === 'mastered').length;
+
+    const learning = chunks.filter(c => c.status === 'learning').length;
+
+    const struggling = chunks.filter(c => c.status === 'struggling').length;
+
+    const pct = n => total ? Math.round(n / total * 100) : 0;
+
+    document.getElementById('stat-total').innerText = total;
+
+    document.getElementById('stat-mastered').innerText = `${mastered} (${pct(mastered)}%)`;
+
+    document.getElementById('stat-learning').innerText = `${learning} (${pct(learning)}%)`;
+
+    document.getElementById('stat-struggling').innerText = `${struggling} (${pct(struggling)}%)`;
+
+    document.getElementById('bar-mastered').style.width = `${pct(mastered)}%`;
+
+    document.getElementById('bar-learning').style.width = `${pct(learning)}%`;
+
+    document.getElementById('bar-struggling').style.width = `${pct(struggling)}%`;
+
+    document.getElementById('stats-due').innerText = `Cards due: ${getDueChunks().length}`;
+
+    document.getElementById('stats-reviewed').innerText =
+
+      `Total reviews: ${chunks.reduce((sum, c) => sum + (Number(c.reviewCount) || 0), 0)}`;
+
+  }
+
+  function escapeHtml(value) {
+
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+
+      '&': '&amp;',
+
+      '<': '&lt;',
+
+      '>': '&gt;',
+
+      '"': '&quot;',
+
+      "'": '&#39;'
+
+    }[char]));
+
+  }
+
+  function renderLibrary() {
+
+    const filter = document.getElementById('library-filter').value;
+
+    const query = document.getElementById('library-search').value.toLowerCase().trim();
+
+    const container = document.getElementById('library-list');
+
+    container.innerHTML = '';
+
+    const filtered = chunks.filter(c => {
+
+      const matchesStatus = filter === 'all' || c.status === filter;
+
+      const text = `${c.chunk} ${c.meaning} ${c.example1} ${c.example2}`.toLowerCase();
+
+      return matchesStatus && text.includes(query);
+
+    });
+
+    if (!filtered.length) {
+
+      container.innerHTML = '<p class="text-sm text-slate-500 col-span-full">No matching Chunks found.</p>';
+
+      return;
+
     }
 
-    function flipCard() {
-      const inner = document.getElementById('card-inner');
-      const controls = document.getElementById('srs-controls');
-      isFlipped = !isFlipped;
-      
-      if (isFlipped) {
-        inner.classList.add('rotate-y-180');
-        controls.classList.remove('opacity-50', 'pointer-events-none');
-      } else {
-        inner.classList.remove('rotate-y-180');
-        controls.classList.add('opacity-50', 'pointer-events-none');
-      }
-    }
+    filtered.forEach(c => {
 
-    function processSRS(type) {
-      if (!isFlipped) return;
+      const item = document.createElement('div');
 
-      if (type === 'hard') { 
-        currentCard.status = 'struggling'; 
-        currentCard.interval = 1; 
-      } else if (type === 'good') { 
-        currentCard.status = 'learning'; 
-        currentCard.interval = 3; 
-      } else if (type === 'easy') { 
-        currentCard.status = 'mastered'; 
-        currentCard.interval = 14; 
-      }
-      
-      if (dailyCompletedCount < 30) {
-        dailyCompletedCount++;
-        localStorage.setItem('toeic_daily_count', dailyCompletedCount.toString());
-        if (dailyCompletedCount === 30) {
-          streakCount++;
-          localStorage.setItem('toeic_streak', streakCount.toString());
-        }
-      }
-      updateProgressUI();
+      item.className = 'bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative group';
 
-      saveData();
-      currentQueueIndex++;
-      loadCard();
-    }
+      const statusClass = c.status === 'mastered'
 
-    function switchTab(tab) {
-      ['study', 'stats', 'library'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}-btn`).classList.replace('bg-indigo-600', 'hover:bg-slate-800');
-        document.getElementById(`tab-${t}-btn`).classList.replace('text-white', 'text-slate-300');
-      });
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-${tab}-btn`).classList.add('bg-indigo-600', 'text-white');
-      if (tab === 'library') renderLibrary();
-    }
+        ? 'bg-emerald-950 text-emerald-400'
 
-    function updateDashboard() {
-      const total = chunks.length;
-      const mastered = chunks.filter(c => c.status === 'mastered').length;
-      const learning = chunks.filter(c => c.status === 'learning').length;
-      const struggling = chunks.filter(c => c.status === 'struggling').length;
+        : c.status === 'learning'
 
-      document.getElementById('stat-total').innerText = total;
-      document.getElementById('stat-mastered').innerText = `${mastered} (${Math.round((mastered/total)*100 || 0)}%)`;
-      document.getElementById('stat-learning').innerText = `${learning} (${Math.round((learning/total)*100 || 0)}%)`;
-      document.getElementById('stat-struggling').innerText = `${struggling} (${Math.round((struggling/total)*100 || 0)}%)`;
+          ? 'bg-amber-950 text-amber-400'
 
-      document.getElementById('bar-mastered').style.width = `${(mastered/total)*100 || 0}%`;
-      document.getElementById('bar-learning').style.width = `${(learning/total)*100 || 0}%`;
-      document.getElementById('bar-struggling').style.width = `${(struggling/total)*100 || 0}%`;
-    }
+          : 'bg-red-950 text-red-400';
 
-    function renderLibrary() {
-      const filter = document.getElementById('library-filter').value;
-      const searchQuery = document.getElementById('library-search').value.toLowerCase().trim();
-      const container = document.getElementById('library-list');
-      container.innerHTML = '';
+      item.innerHTML = `
 
-      let filtered = chunks.filter(c => {
-        const matchesStatus = filter === 'all' || c.status === filter;
-        const matchesSearch = c.chunk.toLowerCase().includes(searchQuery) || c.meaning.toLowerCase().includes(searchQuery) || (c.example1 && c.example1.toLowerCase().includes(searchQuery)) || (c.example2 && c.example2.toLowerCase().includes(searchQuery));
-        return matchesStatus && matchesSearch;
-      });
-      
-      filtered.forEach(c => {
-        const item = document.createElement('div');
-        item.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 relative group";
-        item.innerHTML = `
-          <div class="flex justify-between items-start">
-            <h4 class="font-bold text-white text-base">${c.chunk}</h4>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${c.status === 'mastered' ? 'bg-emerald-950 text-emerald-400' : c.status === 'learning' ? 'bg-amber-950 text-amber-400' : 'bg-red-950 text-red-400'}">${c.status}</span>
-              <button onclick="openEditModal('${c.id}')" class="text-slate-400 hover:text-indigo-400 p-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-              <button onclick="deleteChunk('${c.id}')" class="text-slate-400 hover:text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
+        <div class="flex justify-between items-start gap-2">
+
+          <h4 class="font-bold text-white text-base break-words">${escapeHtml(c.chunk)}</h4>
+
+          <div class="flex items-center gap-1 shrink-0">
+
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${statusClass}">${escapeHtml(c.status)}</span>
+
+            <button data-action="edit" data-id="${escapeHtml(c.id)}" class="text-slate-400 hover:text-indigo-400 p-1" title="Edit">
+
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+
+            </button>
+
+            <button data-action="delete" data-id="${escapeHtml(c.id)}" class="text-slate-400 hover:text-red-400 p-1" title="Delete">
+
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+
+            </button>
+
           </div>
-          <div class="flex items-center justify-between">
-            <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
-            <button onclick="speakText('${c.meaning}')" class="text-slate-400 hover:text-emerald-400 p-1"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
+
+        </div>
+
+        <div class="flex items-start justify-between gap-2">
+
+          <p class="text-xs text-emerald-400 font-medium">${escapeHtml(c.meaning)}</p>
+
+          <button data-action="speak" data-text="${escapeHtml(c.meaning)}" class="text-slate-400 hover:text-emerald-400 p-1 shrink-0">
+
+            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+
+          </button>
+
+        </div>
+
+        <div class="space-y-1 pt-1 border-t border-slate-700/60">
+
+          <div class="flex items-start justify-between gap-2 text-xs text-slate-300 italic">
+
+            <span>1. "${escapeHtml(c.example1)}"</span>
+
+            <button data-action="speak" data-text="${escapeHtml(c.example1)}" class="text-slate-400 hover:text-white p-1 shrink-0">
+
+              <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+
+            </button>
+
           </div>
-          <div class="space-y-1 pt-1 border-t border-slate-700/60">
-            <div class="flex items-center justify-between text-xs text-slate-300 italic">
-              <span>1. "${c.example1 || ''}"</span>
-              <button onclick="speakText('${c.example1 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
-            </div>
-            <div class="flex items-center justify-between text-xs text-slate-300 italic">
-              <span>2. "${c.example2 || ''}"</span>
-              <button onclick="speakText('${c.example2 || ''}')" class="text-slate-400 hover:text-white p-1 shrink-0"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>
-            </div>
+
+          <div class="flex items-start justify-between gap-2 text-xs text-slate-300 italic">
+
+            <span>2. "${escapeHtml(c.example2)}"</span>
+
+            <button data-action="speak" data-text="${escapeHtml(c.example2)}" class="text-slate-400 hover:text-white p-1 shrink-0">
+
+              <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+
+            </button>
+
           </div>
-        `;
-        container.appendChild(item);
+
+        </div>
+
+        <p class="text-[10px] text-slate-500">Reviews: ${Number(c.reviewCount) || 0} · ${getNextReviewLabel(c)}</p>
+
+      `;
+
+      container.appendChild(item);
+
+    });
+
+    container.querySelectorAll('button[data-action]').forEach(btn => {
+
+      btn.addEventListener('click', () => {
+
+        const action = btn.dataset.action;
+
+        const id = btn.dataset.id;
+
+        if (action === 'edit') openEditModal(id);
+
+        if (action === 'delete') deleteChunk(id);
+
+        if (action === 'speak') speakText(btn.dataset.text || '');
+
       });
-      lucide.createIcons();
-    }
 
-    function exportData() {
-      const jsonStr = JSON.stringify(chunks);
-      navigator.clipboard.writeText(jsonStr).then(() => {
-        alert('✅ Backup data copied to clipboard!');
-      }).catch(err => { alert('Failed to copy.'); });
-    }
+    });
 
-    function openImportModal() { document.getElementById('import-input').value = ''; document.getElementById('import-modal').classList.remove('hidden'); }
-    function closeImportModal() { document.getElementById('import-modal').classList.add('hidden'); }
-    function handleImportData() {
-      const rawText = document.getElementById('import-input').value.trim();
-      if (!rawText) return alert('Please paste your backup text first.');
-      try {
-        const parsed = JSON.parse(rawText);
-        if (Array.isArray(parsed)) {
-          chunks = parsed;
-          saveData();
-          closeImportModal();
-          initStudyQueue();
-          loadCard();
-          alert('🎉 Data successfully imported and synchronized!');
-        } else { alert('Invalid format.'); }
-      } catch (e) { alert('Invalid data code format.'); }
-    }
+    lucide.createIcons();
 
-    // 強制語音匹配與發音函式
-    function speakText(text) {
-      if (!('speechSynthesis' in window) || !text) return;
-      window.speechSynthesis.cancel();
+  }
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.lang = currentAccent;
+  function getNextReviewLabel(c) {
 
-      // 嚴格在裝置中找出對應的語音（特別是 en-AU, en-GB 等）
-      if (availableVoices.length === 0) {
-        availableVoices = window.speechSynthesis.getVoices();
-      }
+    if (!c.nextReview || Number(c.nextReview) <= Date.now()) return 'Due now';
 
-      // 優先找完全符合語言代碼的語音包（例如 en-AU）
-      let targetVoice = availableVoices.find(v => v.lang.toLowerCase() === currentAccent.toLowerCase() || v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase());
-      
-      // 如果找不到精確的，找開頭符合的（例如 en 開頭且包含 AU）
-      if (!targetVoice) {
-        const shortCode = currentAccent.split('-')[1]; // AU, GB, US
-        targetVoice = availableVoices.find(v => v.lang.toUpperCase().includes(shortCode));
-      }
+    return 'Next: ' + new Date(Number(c.nextReview)).toLocaleString();
 
-      if (targetVoice) {
-        utterance.voice = targetVoice;
-      }
+  }
 
-      window.speechSynthesis.speak(utterance);
-    }
+  function exportData() {
 
-    function openAddModal() {
-      document.getElementById('modal-title').innerText = "Add New Chunk";
-      document.getElementById('input-id').value = '';
-      document.getElementById('input-chunk').value = '';
-      document.getElementById('input-meaning').value = '';
-      document.getElementById('input-example1').value = '';
-      document.getElementById('input-example2').value = '';
-      document.getElementById('add-modal').classList.remove('hidden');
-    }
+    document.getElementById('export-modal').classList.remove('hidden');
 
-    function openEditModal(id) {
-      const target = chunks.find(c => c.id === id);
-      if (!target) return;
-      document.getElementById('modal-title').innerText = "Edit Chunk";
-      document.getElementById('input-id').value = target.id;
-      document.getElementById('input-chunk').value = target.chunk;
-      document.getElementById('input-meaning').value = target.meaning;
-      document.getElementById('input-example1').value = target.example1 || target.example || '';
-      document.getElementById('input-example2').value = target.example2 || '';
-      document.getElementById('add-modal').classList.remove('hidden');
-    }
+  }
 
-    function deleteChunk(id) {
-      if (confirm('Are you sure you want to delete this chunk?')) {
-        chunks = chunks.filter(c => c.id !== id);
-        saveData();
-        initStudyQueue();
-        loadCard();
-      }
-    }
+  function closeExportModal() {
 
-    function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
-    
-    function handleSaveChunk(e) {
-      e.preventDefault();
-      const id = document.getElementById('input-id').value;
-      const chunkVal = document.getElementById('input-chunk').value;
-      const meaningVal = document.getElementById('input-meaning').value;
-      const example1Val = document.getElementById('input-example1').value;
-      const example2Val = document.getElementById('input-example2').value;
+    document.getElementById('export-modal').classList.add('hidden');
 
-      if (id) {
-        const target = chunks.find(c => c.id === id);
-        if (target) {
-          target.chunk = chunkVal;
-          target.meaning = meaningVal;
-          target.example1 = example1Val;
-          target.example2 = example2Val;
-        }
-      } else {
-        const newChunk = {
-          id: Date.now().toString(),
-          chunk: chunkVal,
-          meaning: meaningVal,
-          example1: example1Val,
-          example2: example2Val,
-          status: 'struggling',
-          interval: 1
+  }
+
+  async function performExport() {
+
+    const mode = document.getElementById('export-mode').value;
+
+    const content = chunks.map(c => {
+
+      const base = {
+
+        id: c.id,
+
+        chunk: c.chunk,
+
+        meaning: c.meaning,
+
+        example1: c.example1,
+
+        example2: c.example2
+
+      };
+
+      if (mode === 'full') {
+
+        return {
+
+          ...base,
+
+          status: c.status,
+
+          srsStage: c.srsStage,
+
+          nextReview: c.nextReview,
+
+          interval: c.interval,
+
+          reviewCount: c.reviewCount,
+
+          lastReviewed: c.lastReviewed
+
         };
-        chunks.unshift(newChunk);
+
+      }
+
+      return base;
+
+    });
+
+    let data;
+
+    if (mode === 'full') {
+
+      data = {
+
+        format: 'toeic-chunk-master-backup',
+
+        version: 2,
+
+        exportedAt: new Date().toISOString(),
+
+        profile: activeProfile,
+
+        chunks: content,
+
+        streakData: {
+
+          lastDate: getStored('toeic_last_date'),
+
+          dailyCount: dailyCompletedCount,
+
+          streak: streakCount
+
+        }
+
+      };
+
+    } else {
+
+      data = content;
+
+    }
+
+    const json = JSON.stringify(data, null, 2);
+
+    try {
+
+      await navigator.clipboard.writeText(json);
+
+      closeExportModal();
+
+      alert('JSON backup copied to clipboard.');
+
+    } catch {
+
+      closeExportModal();
+
+      showTextFallback(json);
+
+    }
+
+  }
+
+  function showTextFallback(text) {
+
+    const win = window.open('', '_blank');
+
+    if (!win) {
+
+      prompt('Copy your JSON backup:', text);
+
+      return;
+
+    }
+
+    win.document.write('<title>JSON Backup</title><textarea style="width:98%;height:95vh;font-family:monospace"></textarea>');
+
+    win.document.close();
+
+    win.document.querySelector('textarea').value = text;
+
+    win.document.querySelector('textarea').select();
+
+  }
+
+  function openImportModal() {
+
+    document.getElementById('import-input').value = '';
+
+    document.getElementById('import-modal').classList.remove('hidden');
+
+  }
+
+  function closeImportModal() {
+
+    document.getElementById('import-modal').classList.add('hidden');
+
+  }
+
+  function findMatchingChunk(existing, incoming) {
+
+    const byId = existing.find(c => String(c.id) === String(incoming.id));
+
+    if (byId) return byId;
+
+    const normalizedText = String(incoming.chunk || '').trim().toLowerCase();
+
+    return existing.find(c => c.chunk.trim().toLowerCase() === normalizedText);
+
+  }
+
+  function resetChunkProgress(c) {
+
+    c.status = 'struggling';
+
+    c.srsStage = -1;
+
+    c.nextReview = 0;
+
+    c.interval = 0;
+
+    c.reviewCount = 0;
+
+    c.lastReviewed = null;
+
+    return c;
+
+  }
+
+  function mergeIncomingChunk(existing, incoming, mode, isFullBackup) {
+
+    const old = findMatchingChunk(existing, incoming);
+
+    const incomingHasProgress = isFullBackup && hasProgressData(incoming);
+
+    if (!old) {
+
+      return normalizeChunk(incoming, mode === 'replace-reset' || !incomingHasProgress);
+
+    }
+
+    const sameExpression = old.chunk.trim().toLowerCase() === String(incoming.chunk || '').trim().toLowerCase();
+
+    const updated = {
+
+      ...old,
+
+      chunk: String(incoming.chunk || old.chunk).trim(),
+
+      meaning: String(incoming.meaning ?? old.meaning).trim(),
+
+      example1: String(incoming.example1 || incoming.example || old.example1).trim(),
+
+      example2: String(incoming.example2 || old.example2 || '').trim()
+
+    };
+
+    if (mode === 'replace-reset') {
+
+      return resetChunkProgress(updated);
+
+    }
+
+    // Changing the actual Chunk expression means it should be relearned.
+
+    if (!sameExpression) {
+
+      return resetChunkProgress(updated);
+
+    }
+
+    // In replace mode, restore progress from a full backup when available.
+
+    if (mode === 'replace-preserve' && incomingHasProgress) {
+
+      return normalizeChunk({ ...updated, ...incoming, ...{
+
+        chunk: updated.chunk,
+
+        meaning: updated.meaning,
+
+        example1: updated.example1,
+
+        example2: updated.example2,
+
+        id: old.id
+
+      }});
+
+    }
+
+    // Merge mode deliberately preserves progress on existing cards.
+
+    return updated;
+
+  }
+
+  function handleImportData() {
+
+    const rawText = document.getElementById('import-input').value.trim();
+
+    if (!rawText) return alert('Please paste your JSON data first.');
+
+    try {
+
+      const parsed = JSON.parse(rawText);
+
+      const isFullBackup = !Array.isArray(parsed) && parsed && Array.isArray(parsed.chunks);
+
+      const incoming = Array.isArray(parsed) ? parsed : (isFullBackup ? parsed.chunks : null);
+
+      if (!Array.isArray(incoming) || incoming.some(c => !c || typeof c !== 'object' || !String(c.chunk || '').trim())) {
+
+        return alert('Invalid JSON format. Expected a JSON array or a full Chunk backup.');
+
+      }
+
+      const mode = document.getElementById('import-mode').value;
+
+      const existing = chunks.slice();
+
+      let nextChunks = [];
+
+      if (mode === 'merge') {
+
+        nextChunks = existing.slice();
+
+        incoming.forEach(raw => {
+
+          const matched = findMatchingChunk(nextChunks, raw);
+
+          if (matched) {
+
+            const updated = mergeIncomingChunk(nextChunks, raw, mode, isFullBackup);
+
+            const index = nextChunks.findIndex(c => c.id === matched.id);
+
+            nextChunks[index] = updated;
+
+          } else {
+
+            nextChunks.push(normalizeChunk(raw, !isFullBackup || !hasProgressData(raw)));
+
+          }
+
+        });
+
+      } else {
+
+        incoming.forEach(raw => {
+
+          nextChunks.push(mergeIncomingChunk(existing, raw, mode, isFullBackup));
+
+        });
+
+        // Ensure every imported item has a unique ID.
+
+        const seen = new Set();
+
+        nextChunks = nextChunks.map(c => {
+
+          if (seen.has(c.id)) c.id = makeId();
+
+          seen.add(c.id);
+
+          return c;
+
+        });
+
+      }
+
+      chunks = nextChunks.map(c => normalizeChunk(c));
+
+      if (mode === 'replace-reset') {
+
+        chunks = chunks.map(c => normalizeChunk(c, true));
+
+        resetDailyStreak();
+
+      } else if (mode === 'replace-preserve' && isFullBackup && parsed.streakData) {
+
+        const sd = parsed.streakData;
+
+        if (sd.lastDate) setStored('toeic_last_date', sd.lastDate);
+
+        if (Number.isFinite(Number(sd.dailyCount))) setStored('toeic_daily_count', String(Math.min(DAILY_GOAL, Number(sd.dailyCount))));
+
+        if (Number.isFinite(Number(sd.streak))) setStored('toeic_streak', String(Math.max(0, Number(sd.streak))));
+
+        checkAndUpdateStreak();
+
       }
 
       saveData();
-      closeAddModal();
-      initStudyQueue();
+
+      closeImportModal();
+
+      rebuildQueue();
+
       loadCard();
+
+      updateDashboard();
+
+      renderLibrary();
+
+      alert(`Import successful. ${chunks.length} Chunk(s) are now in your library.`);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert('Unable to import this JSON. Please check the file format.');
+
     }
 
-    window.onload = initApp;
-  </script>
+  }
+
+  function resetDailyStreak() {
+
+    streakCount = 0;
+
+    dailyCompletedCount = 0;
+
+    hasReachedGoalToday = false;
+
+    setStored('toeic_last_date', new Date().toDateString());
+
+    setStored('toeic_daily_count', '0');
+
+    setStored('toeic_streak', '0');
+
+    updateProgressUI();
+
+  }
+
+  function resetLearningProgress() {
+
+    const confirmed = confirm(
+
+      'Reset all learning progress for the current profile?\n\n' +
+
+      'All Chunk content and examples will remain.\n' +
+
+      'Review stages, review counts, due dates, daily count, and streak will be reset.'
+
+    );
+
+    if (!confirmed) return;
+
+    chunks = chunks.map(c => normalizeChunk(c, true));
+
+    resetDailyStreak();
+
+    saveData();
+
+    rebuildQueue();
+
+    loadCard();
+
+    updateDashboard();
+
+    renderLibrary();
+
+    alert('Learning progress has been reset. Your Chunk content is still saved.');
+
+  }
+
+  function speakCurrent(field) {
+
+    if (!currentCard) return;
+
+    speakText(currentCard[field] || '');
+
+  }
+
+  function speakText(text) {
+
+    if (!('speechSynthesis' in window) || !text) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    utterance.rate = 0.9;
+
+    utterance.lang = currentAccent;
+
+    if (!availableVoices.length) {
+
+      availableVoices = window.speechSynthesis.getVoices();
+
+    }
+
+    let targetVoice = availableVoices.find(v =>
+
+      v.lang.replace('_', '-').toLowerCase() === currentAccent.toLowerCase()
+
+    );
+
+    if (!targetVoice) {
+
+      const region = currentAccent.split('-')[1];
+
+      targetVoice = availableVoices.find(v => v.lang.toUpperCase().includes(region));
+
+    }
+
+    if (targetVoice) utterance.voice = targetVoice;
+
+    window.speechSynthesis.speak(utterance);
+
+  }
+
+  function openAddModal() {
+
+    document.getElementById('modal-title').innerText = 'Add New Chunk';
+
+    document.getElementById('input-id').value = '';
+
+    document.getElementById('input-chunk').value = '';
+
+    document.getElementById('input-meaning').value = '';
+
+    document.getElementById('input-example1').value = '';
+
+    document.getElementById('input-example2').value = '';
+
+    document.getElementById('edit-note').classList.add('hidden');
+
+    document.getElementById('add-modal').classList.remove('hidden');
+
+  }
+
+  function openEditModal(id) {
+
+    const target = chunks.find(c => c.id === id);
+
+    if (!target) return;
+
+    document.getElementById('modal-title').innerText = 'Edit Chunk';
+
+    document.getElementById('input-id').value = target.id;
+
+    document.getElementById('input-chunk').value = target.chunk;
+
+    document.getElementById('input-meaning').value = target.meaning;
+
+    document.getElementById('input-example1').value = target.example1 || '';
+
+    document.getElementById('input-example2').value = target.example2 || '';
+
+    document.getElementById('edit-note').classList.remove('hidden');
+
+    document.getElementById('add-modal').classList.remove('hidden');
+
+  }
+
+  function deleteChunk(id) {
+
+    const target = chunks.find(c => c.id === id);
+
+    if (!target) return;
+
+    if (!confirm(`Delete "${target.chunk}"? This cannot be undone unless you have a backup.`)) return;
+
+    chunks = chunks.filter(c => c.id !== id);
+
+    saveData();
+
+    rebuildQueue();
+
+    loadCard();
+
+    updateDashboard();
+
+  }
+
+  function closeAddModal() {
+
+    document.getElementById('add-modal').classList.add('hidden');
+
+  }
+
+  function handleSaveChunk(event) {
+
+    event.preventDefault();
+
+    const id = document.getElementById('input-id').value;
+
+    const chunkVal = document.getElementById('input-chunk').value.trim();
+
+    const meaningVal = document.getElementById('input-meaning').value.trim();
+
+    const example1Val = document.getElementById('input-example1').value.trim();
+
+    const example2Val = document.getElementById('input-example2').value.trim();
+
+    if (!chunkVal || !meaningVal) return alert('Please fill in the Chunk and its meaning.');
+
+    if (id) {
+
+      const target = chunks.find(c => c.id === id);
+
+      if (!target) return;
+
+      const expressionChanged = target.chunk.trim().toLowerCase() !== chunkVal.toLowerCase();
+
+      target.chunk = chunkVal;
+
+      target.meaning = meaningVal;
+
+      target.example1 = example1Val;
+
+      target.example2 = example2Val;
+
+      if (expressionChanged) {
+
+        resetChunkProgress(target);
+
+      }
+
+    } else {
+
+      chunks.unshift(normalizeChunk({
+
+        id: makeId(),
+
+        chunk: chunkVal,
+
+        meaning: meaningVal,
+
+        example1: example1Val,
+
+        example2: example2Val
+
+      }, true));
+
+    }
+
+    saveData();
+
+    closeAddModal();
+
+    rebuildQueue();
+
+    loadCard();
+
+    updateDashboard();
+
+  }
+
+  window.addEventListener('storage', event => {
+
+    // Do not silently overwrite active progress if another tab changes local storage.
+
+    if (event.key === storageKey('toeic_chunks')) {
+
+      alert('Learning data changed in another tab. Refresh this page to load the latest data.');
+
+    }
+
+  });
+
+  window.onload = initApp;
+
+</script>
+
 </body>
+
 </html>
