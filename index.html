@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEIC Chunk Master - SRS Flashcards</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
+
+  <!-- Header / Navbar -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="p-2 bg-indigo-600 rounded-lg text-white font-bold">TC</div>
+        <div>
+          <h1 class="font-bold text-lg leading-none">TOEIC Chunk Master</h1>
+          <p class="text-xs text-slate-400 mt-0.5">E-E Spaced Repetition System</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="tab-study-btn" onclick="switchTab('study')" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 text-white transition">Study</button>
+        <button id="tab-stats-btn" onclick="switchTab('stats')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 transition">Dashboard</button>
+        <button id="tab-library-btn" onclick="switchTab('library')" class="px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 transition">Library</button>
+        <button onclick="openAddModal()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 transition" title="Add New Chunk">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col">
+
+    <!-- STUDY TAB -->
+    <div id="tab-study" class="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto w-full">
+      <!-- Daily Progress & Streak -->
+      <div class="w-full mb-6 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Goal</span>
+          <span class="text-xs font-bold text-indigo-400" id="daily-progress-text">0 / 30 Completed</span>
+        </div>
+        <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+          <div id="daily-progress-bar" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Flashcard Container -->
+      <div id="card-container" class="w-full aspect-[4/3] min-h-[300px] perspective-1000 cursor-pointer mb-6 group" onclick="flipCard()">
+        <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d rounded-2xl shadow-2xl border border-slate-700/80 bg-slate-800 flex flex-col justify-between p-6">
+          
+          <!-- Front Face -->
+          <div class="absolute inset-0 backface-hidden flex flex-col justify-between p-6 bg-slate-800 rounded-2xl">
+            <div class="flex justify-between items-center">
+              <span id="card-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300">New Chunk</span>
+              <button onclick="event.stopPropagation(); speakText(currentCard.chunk)" class="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                <i data-lucide="volume-2" class="w-6 h-6"></i>
+              </button>
+            </div>
+            <div class="text-center my-auto">
+              <h2 id="card-chunk" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">--</h2>
+              <p class="text-xs text-slate-500 mt-4">(Click anywhere or press Spacebar to flip)</p>
+            </div>
+            <div class="text-center text-xs text-slate-400">FRONT</div>
+          </div>
+
+          <!-- Back Face -->
+          <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col justify-between p-6 bg-slate-850 border border-indigo-500/30 rounded-2xl bg-slate-800">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+              <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Simple English Meaning</span>
+              <button onclick="event.stopPropagation(); speakText(currentCard.meaning + '. ' + currentCard.example)" class="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                <i data-lucide="volume-2" class="w-6 h-6"></i>
+              </button>
+            </div>
+            <div class="my-auto space-y-4 text-left">
+              <div>
+                <p id="card-meaning" class="text-xl font-bold text-emerald-400">--</p>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+                <p class="text-xs text-slate-400 font-semibold mb-1">EXAMPLE SENTENCE</p>
+                <p id="card-example" class="text-sm text-slate-200 italic">"--"</p>
+              </div>
+            </div>
+            <div class="text-center text-xs text-slate-400 border-t border-slate-700 pt-2">BACK</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SRS Response Buttons (Visible when Card is Flipped) -->
+      <div id="srs-controls" class="w-full grid grid-cols-3 gap-3 opacity-50 pointer-events-none transition-all duration-300">
+        <button onclick="processSRS('hard')" class="flex flex-col items-center py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 rounded-xl transition">
+          <span class="font-bold text-sm">Hard</span>
+          <span class="text-[10px] text-red-400/80">Forgot / 1d</span>
+        </button>
+        <button onclick="processSRS('good')" class="flex flex-col items-center py-3 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 text-amber-300 rounded-xl transition">
+          <span class="font-bold text-sm">Good</span>
+          <span class="text-[10px] text-amber-400/80">Review / 3d</span>
+        </button>
+        <button onclick="processSRS('easy')" class="flex flex-col items-center py-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/50 text-emerald-300 rounded-xl transition">
+          <span class="font-bold text-sm">Easy</span>
+          <span class="text-[10px] text-emerald-400/80">Mastered / 14d</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD / STATS TAB -->
+    <div id="tab-stats" class="hidden space-y-6">
+      <h2 class="text-xl font-bold text-white mb-4">Mastery Dashboard</h2>
+      
+      <!-- Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+          <p class="text-xs font-medium text-slate-400">Total Chunks</p>
+          <p id="stat-total" class="text-2xl font-black text-white mt-1">0</p>
+        </div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-emerald-900/50">
+          <p class="text-xs font-medium text-emerald-400">🟢 Mastered</p>
+          <p id="stat-mastered" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+        </div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-amber-900/50">
+          <p class="text-xs font-medium text-amber-400">🟡 Learning</p>
+          <p id="stat-learning" class="text-2xl font-black text-amber-400 mt-1">0</p>
+        </div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-red-900/50">
+          <p class="text-xs font-medium text-red-400">🔴 Struggling</p>
+          <p id="stat-struggling" class="text-2xl font-black text-red-400 mt-1">0</p>
+        </div>
+      </div>
+
+      <!-- Segmented Bar -->
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3">
+        <h3 class="text-sm font-semibold text-slate-300">Proficiency Breakdown</h3>
+        <div id="breakdown-bar" class="w-full h-4 bg-slate-700 rounded-full overflow-hidden flex">
+          <div id="bar-mastered" class="bg-emerald-500 h-full" style="width: 0%"></div>
+          <div id="bar-learning" class="bg-amber-500 h-full" style="width: 0%"></div>
+          <div id="bar-struggling" class="bg-red-500 h-full" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-400 pt-1">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Mastered</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Learning</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Struggling</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIBRARY TAB -->
+    <div id="tab-library" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold text-white">Chunk Library</h2>
+        <select id="library-filter" onchange="renderLibrary()" class="bg-slate-800 text-slate-200 border border-slate-700 text-sm rounded-lg p-2">
+          <option value="all">All Chunks</option>
+          <option value="mastered">🟢 Mastered</option>
+          <option value="learning">🟡 Learning</option>
+          <option value="struggling">🔴 Struggling</option>
+        </select>
+      </div>
+      <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Dynamic Chunk Cards -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add Chunk Modal -->
+  <div id="add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+      <h3 class="text-lg font-bold text-white">Add New Chunk</h3>
+      <form onsubmit="handleAddChunk(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">CHUNK / EXPRESSION</label>
+          <input type="text" id="input-chunk" required placeholder="e.g., be subject to" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">SIMPLE ENGLISH MEANING</label>
+          <input type="text" id="input-meaning" required placeholder="e.g., likely to change depending on" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">WORKPLACE EXAMPLE SENTENCE</label>
+          <textarea id="input-example" required rows="2" placeholder="e.g., Schedules are subject to change." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-lg text-sm bg-slate-700 text-slate-300 hover:bg-slate-600">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Save Chunk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initial TOEIC Workplace Starter Chunks Dataset (Pure E-E)
+    const starterChunks = [
+      { id: '1', chunk: 'be subject to', meaning: 'likely to change depending on / conditional upon', example: 'Flight schedules are subject to change due to poor weather.', status: 'struggling', interval: 1, nextReview: Date.now() },
+      { id: '2', chunk: 'comply with', meaning: 'obey a rule, law, or request', example: 'All staff must comply with safety regulations in the lab.', status: 'learning', interval: 3, nextReview: Date.now() },
+      { id: '3', chunk: 'turn to', meaning: 'ask someone for help or advice', example: 'You can always turn to the IT department for tech support.', status: 'struggling', interval: 1, nextReview: Date.now() },
+      { id: '4', chunk: 'be working on', meaning: 'developing, preparing, or improving something', example: 'The team is currently working on a new marketing campaign.', status: 'learning', interval: 3, nextReview: Date.now() },
+      { id: '5', chunk: 'incorporation of', meaning: 'the addition or inclusion of something', example: 'The incorporation of AI tools significantly increased output.', status: 'mastered', interval: 15, nextReview: Date.now() + 864000000 },
+      { id: '6', chunk: 'be eligible for', meaning: 'qualified to receive or do something', example: 'Full-time employees are eligible for health insurance benefits.', status: 'learning', interval: 4, nextReview: Date.now() },
+      { id: '7', chunk: 'in response to', meaning: 'as a reaction or reply to', example: 'We updated our policy in response to customer feedback.', status: 'mastered', interval: 20, nextReview: Date.now() + 864000000 },
+      { id: '8', chunk: 'take effect', meaning: 'start applying or functioning officially', example: 'The new tax policy will take effect starting next month.', status: 'learning', interval: 2, nextReview: Date.now() },
+      { id: '9', chunk: 'be in charge of', meaning: 'be responsible for managing something', example: 'Sarah is in charge of organizing the annual conference.', status: 'mastered', interval: 14, nextReview: Date.now() + 864000000 },
+      { id: '10', chunk: 'look forward to', meaning: 'wait for something with excitement', example: 'We look forward to collaborating with your company.', status: 'mastered', interval: 30, nextReview: Date.now() + 864000000 }
+    ];
+
+    let chunks = [];
+    let currentCardIndex = 0;
+    let isFlipped = false;
+    let dailyCompletedCount = 0;
+
+    // Initialize App Data
+    function initApp() {
+      const savedChunks = localStorage.getItem('toeic_chunks');
+      if (savedChunks) {
+        chunks = JSON.parse(savedChunks);
+      } else {
+        chunks = starterChunks;
+        saveData();
+      }
+      lucide.createIcons();
+      updateDashboard();
+      loadCard();
+    }
+
+    function saveData() {
+      localStorage.setItem('toeic_chunks', JSON.stringify(chunks));
+      updateDashboard();
+    }
+
+    // Speech Functionality
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Load Flashcard
+    let currentCard = null;
+    function loadCard() {
+      if (chunks.length === 0) return;
+      currentCard = chunks[currentCardIndex % chunks.length];
+      
+      document.getElementById('card-chunk').innerText = currentCard.chunk;
+      document.getElementById('card-meaning').innerText = currentCard.meaning;
+      document.getElementById('card-example').innerText = `"${currentCard.example}"`;
+      
+      const badge = document.getElementById('card-status-badge');
+      badge.innerText = currentCard.status.toUpperCase();
+      if (currentCard.status === 'mastered') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800";
+      else if (currentCard.status === 'learning') badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-300 border border-amber-800";
+      else badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-red-950 text-red-300 border border-red-800";
+
+      if (isFlipped) flipCard();
+    }
+
+    function flipCard() {
+      const inner = document.getElementById('card-inner');
+      const controls = document.getElementById('srs-controls');
+      isFlipped = !isFlipped;
+      
+      if (isFlipped) {
+        inner.classList.add('rotate-y-180');
+        controls.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        inner.classList.remove('rotate-y-180');
+        controls.classList.add('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    // Process SRS Decision
+    function processSRS(type) {
+      if (!isFlipped) return;
+      
+      if (type === 'hard') {
+        currentCard.status = 'struggling';
+        currentCard.interval = 1;
+      } else if (type === 'good') {
+        currentCard.status = 'learning';
+        currentCard.interval = 3;
+      } else if (type === 'easy') {
+        currentCard.status = 'mastered';
+        currentCard.interval = 14;
+      }
+      
+      dailyCompletedCount = Math.min(30, dailyCompletedCount + 1);
+      document.getElementById('daily-progress-text').innerText = `${dailyCompletedCount} / 30 Completed`;
+      document.getElementById('daily-progress-bar').style.width = `${(dailyCompletedCount / 30) * 100}%`;
+
+      saveData();
+      currentCardIndex++;
+      loadCard();
+    }
+
+    // Navigation & Tabs
+    function switchTab(tab) {
+      ['study', 'stats', 'library'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}-btn`).classList.replace('bg-indigo-600', 'hover:bg-slate-800');
+        document.getElementById(`tab-${t}-btn`).classList.replace('text-white', 'text-slate-300');
+      });
+      
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}-btn`).classList.add('bg-indigo-600', 'text-white');
+      if (tab === 'library') renderLibrary();
+    }
+
+    // Update Dashboard Metrics
+    function updateDashboard() {
+      const total = chunks.length;
+      const mastered = chunks.filter(c => c.status === 'mastered').length;
+      const learning = chunks.filter(c => c.status === 'learning').length;
+      const struggling = chunks.filter(c => c.status === 'struggling').length;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-mastered').innerText = `${mastered} (${Math.round((mastered/total)*100 || 0)}%)`;
+      document.getElementById('stat-learning').innerText = `${learning} (${Math.round((learning/total)*100 || 0)}%)`;
+      document.getElementById('stat-struggling').innerText = `${struggling} (${Math.round((struggling/total)*100 || 0)}%)`;
+
+      document.getElementById('bar-mastered').style.width = `${(mastered/total)*100 || 0}%`;
+      document.getElementById('bar-learning').style.width = `${(learning/total)*100 || 0}%`;
+      document.getElementById('bar-struggling').style.width = `${(struggling/total)*100 || 0}%`;
+    }
+
+    // Render Library
+    function renderLibrary() {
+      const filter = document.getElementById('library-filter').value;
+      const container = document.getElementById('library-list');
+      container.innerHTML = '';
+
+      const filtered = filter === 'all' ? chunks : chunks.filter(c => c.status === filter);
+      
+      filtered.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2";
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <h4 class="font-bold text-white text-base">${c.chunk}</h4>
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${c.status === 'mastered' ? 'bg-emerald-950 text-emerald-400' : c.status === 'learning' ? 'bg-amber-950 text-amber-400' : 'bg-red-950 text-red-400'}">${c.status}</span>
+          </div>
+          <p class="text-xs text-emerald-400 font-medium">${c.meaning}</p>
+          <p class="text-xs text-slate-400 italic">"${c.example}"</p>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Modal Control
+    function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+    function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+    function handleAddChunk(e) {
+      e.preventDefault();
+      const newChunk = {
+        id: Date.now().toString(),
+        chunk: document.getElementById('input-chunk').value,
+        meaning: document.getElementById('input-meaning').value,
+        example: document.getElementById('input-example').value,
+        status: 'struggling',
+        interval: 1,
+        nextReview: Date.now()
+      };
+      chunks.unshift(newChunk);
+      saveData();
+      closeAddModal();
+      e.target.reset();
+      switchTab('study');
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); flipCard(); }
+      else if (e.key === '1') processSRS('hard');
+      else if (e.key === '2') processSRS('good');
+      else if (e.key === '3') processSRS('easy');
+    });
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
