@@ -29,10 +29,10 @@
         <div class="flex items-center gap-2">
           <!-- Accent Selector -->
           <select id="accent-select" onchange="changeAccent(this.value)" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500">
-            <option value="en-US">🇺🇸 US</option>
-            <option value="en-GB">🇬🇧 UK</option>
-            <option value="en-CA">🇨🇦 CA</option>
-            <option value="en-AU">🇦🇺 AU</option>
+            <option value="en">🇺🇸 US (American)</option>
+            <option value="en-GB">🇬🇧 UK (British)</option>
+            <option value="en-CA">🇨🇦 CA (Canadian)</option>
+            <option value="en-AU">🇦🇺 AU (Australian)</option>
           </select>
           <span id="streak-badge" class="text-xs font-bold text-orange-400 bg-orange-950/60 px-2.5 py-1 rounded-full border border-orange-800/50">🔥 0 Streak</span>
         </div>
@@ -260,10 +260,10 @@
     let isShuffleOn = false;
     let dailyCompletedCount = 0;
     let streakCount = 0;
-    let currentAccent = 'en-US';
+    let currentAccent = 'en';
 
     function initApp() {
-      currentAccent = localStorage.getItem('toeic_accent') || 'en-US';
+      currentAccent = localStorage.getItem('toeic_accent') || 'en';
       document.getElementById('accent-select').value = currentAccent;
 
       const savedChunks = localStorage.getItem('toeic_chunks');
@@ -520,63 +520,16 @@
       } catch (e) { alert('Invalid data code format.'); }
     }
 
-    // 高級語音篩選演算法 (解決加拿大與音質優先順序問題)
-    function getBestVoice(targetLang) {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) return null;
-
-      const langCode = targetLang.toLowerCase();
-      const countryCode = targetLang.split('-')[1]?.toLowerCase() || '';
-
-      // 1. 篩選出該語系/國家的所有語音
-      let matchingVoices = voices.filter(v => {
-        const vLang = v.lang.replace('_', '-').toLowerCase();
-        return vLang === langCode || vLang.startsWith(langCode);
-      });
-
-      // 針對加拿大的特殊處理：若無 en-CA 語音，撈出包含 "Canada" 或 "CA" 的語音
-      if (matchingVoices.length === 0 && countryCode === 'ca') {
-        matchingVoices = voices.filter(v => 
-          v.name.toLowerCase().includes('canada') || 
-          v.lang.toLowerCase().includes('ca')
-        );
-      }
-
-      // 若完全找不到該國語音，Fallback 降級抓 en-US
-      if (matchingVoices.length === 0) {
-        matchingVoices = voices.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith('en-us'));
-      }
-
-      // 2. 音質優先順序（排序：Enhanced/Premium/Siri > 自然音 > 一般聲音）
-      matchingVoices.sort((a, b) => {
-        const nameA = a.name.toLowerCase();
-        const nameB = b.name.toLowerCase();
-
-        const isEnhancedA = nameA.includes('enhanced') || nameA.includes('premium') || nameA.includes('siri');
-        const isEnhancedB = nameB.includes('enhanced') || nameB.includes('premium') || nameB.includes('siri');
-
-        if (isEnhancedA && !isEnhancedB) return -1;
-        if (!isEnhancedA && isEnhancedB) return 1;
-        return 0;
-      });
-
-      return matchingVoices[0] || null;
-    }
-
+    // 使用 Google TTS API 串流，真正支援多國口音 (US, UK, CA, AU)
     function speakText(text) {
-      if (!('speechSynthesis' in window) || !text) return;
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.lang = currentAccent;
-
-      const bestVoice = getBestVoice(currentAccent);
-      if (bestVoice) {
-        utterance.voice = bestVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
+      if (!text) return;
+      const encodedText = encodeURIComponent(text);
+      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${currentAccent}&client=tw-ob`;
+      const audio = new Audio(audioUrl);
+      audio.play().catch(err => {
+        console.error("Audio playback error:", err);
+        alert("Audio playback failed.");
+      });
     }
 
     function openAddModal() {
